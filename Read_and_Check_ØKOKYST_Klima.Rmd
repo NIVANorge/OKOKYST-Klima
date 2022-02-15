@@ -1,0 +1,148 @@
+---
+title: "Rean and check new ØKOKYST klima stations 2021-2025"
+author: "Helene Frigstad"
+date: "15 february 2021"
+output: html_notebook
+---
+
+## 0. Libraries
+```{r}
+library(tidyverse)
+library(readxl)
+library(pander)
+library(scales)
+#library(gridExtra)
+#library(grid)
+library (caTools)
+#install.packages("xlsx")
+#library(xlsx)
+library (lubridate)
+
+```
+
+
+## 1. Folders and files    
+Content of folders (see code)  
+* R markdown must have working directory in same location as the script file is stored, ie. put data and script in same folder
+```{r}
+#clear workspace
+#ls()
+#rm(list = ls())
+
+# sjekke filer i folder "Datasett"
+dir("Datasett")
+```
+
+## 2. Read and clean files
+
+### a. read
+* Reads file downloaded from Aquamonitor 15.02.2022 (using new ØKOKYST Klima 2021-2025 in AqM), excel-file was cleaned before reading into R (see version ...toR.xlsx)
+```{r}
+#? read_excel
+df <- read_excel("Datasett/AqM_data_2022_02_15_12_20_ToR.xlsx", "WaterChemistry", col_names = T, col_types = c("text", "text", "text", "text", "text", "text","text","text","text", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"))  
+
+
+#units
+#DOC	Fluorescens	KlfA	NH4-N	Nitrogen part	NO3+NO2-N	O2	O2	O2 (metning)	PO4-P	POC	P-PO4	Salinitet	SGR - Suspendert gløderest	Siktdyp	SiO2	STS	Temperatur	Tetthetsanomali	TOTN	TOTP	TOTP_P	TSM	Turbiditet
+#mg/L C	µg/l	µg/l	µg/l	µg/l N	µg/l	mg/L	ml/l	%	µg/l	µg/l C	µg/l P		mg/l	m	mg/l	mg/l	C	kg/m3	µg/l	µg/l	µg/l P	mg/l	FNU
+
+
+#lage datoobjekt
+df$Date <- as.Date (paste (df$Year, df$Month, df$Day, sep ="-"))
+
+#summary (df)
+#tr(df)
+
+```
+
+
+### b. clean
+```{r}
+
+# stationID is consistent across projects and time 
+df$StationId <- as.factor (df$StationId)
+#(as.factor (df$StationId))
+#df$StationId <- as.factor (df$StationId)
+#levels(df$StationId) #"63018" (VT71) "68915" (VT16) "68936" (VT3) "68938" (VR54) "68992" (VR21) "70953" ()
+
+# rename StationID from numeric to station code
+sel <- levels(df$StationId) == "63018"; sum(sel)
+levels(df$StationId)[sel] <- "VT71"
+sel <- levels(df$StationId) == "68936"; sum(sel)
+levels(df$StationId)[sel] <- "VT3"
+sel <- levels(df$StationId) == "68938"; sum(sel)
+levels(df$StationId)[sel] <- "VR54"
+sel <- levels(df$StationId) == "68915"; sum(sel)
+levels(df$StationId)[sel] <- "VT16"
+sel <- levels(df$StationId) == "68992"; sum(sel)
+levels(df$StationId)[sel] <- "VR21"
+sel <- levels(df$StationId) == "70953"; sum(sel)
+levels(df$StationId)[sel] <- "VR58"
+
+# order stations for ggplot
+df$StationId <- factor(df$StationId, levels = c("VT3", "VT16", "VT71", "VR54", "VR58", "VR21"))
+
+#include only data from 2017 to 2021 (or just 2020?)
+#range (df$Date)
+df <- subset(df, Date >= "2017-01-01" &  Date <= "2021-12-31")
+
+# unique values?
+df <- distinct (df)
+
+# str(df)
+# # look at no of obs for variables pr year
+# tb <- df %>% 
+#   gather("Variable", Value, Temperature:DIN) %>%
+#   filter(!is.na(Value)) %>%
+#   xtabs(~Year + Variable, .)
+# pandoc.table(tb, style = "rmarkdown"
+
+# Coverting O2, NB! do not do this now, see if necessary later
+# VR54 is given in mg/L O2, while others in ml/L
+# df %>%
+#   gather("Variable", "Value", O2_mg, O2_ml) %>%
+#   ggplot(aes(Date, Value)) +
+#     geom_line() +
+#     facet_grid(~Variable)
+# 
+# #To convert DO from mg/L to ml/L, divide by 1.4276.
+# df <- df %>%
+#   mutate(StationId = as.character (StationId)) %>%
+#   mutate (conv_O2_ml = df$O2_mg/1.4276) %>%
+#   mutate(O2_ml = ifelse(StationId == "VR54", conv_O2_ml, O2_ml)) %>%
+#   mutate(StationId = factor (StationId))%>%
+#   select (-conv_O2_ml, -O2_mg)
+# 
+# #check that is correct
+# df %>%
+#   gather("Variable", "Value", O2_mg, O2_ml, conv_O2_ml) %>%
+#   ggplot(aes(Date, Value)) +
+#     geom_line() +
+#     facet_grid(StationId~Variable)
+
+
+# keep only relevant cols and rename
+str(df)
+df_sel <-  select (df, StationId, Date,  Depth1,  Depth2, Salinitet, Temperatur, Siktdyp, Turbiditet, DOC, KlfA, O2_mg, O2_ml, NO3_NO2, NH4, PO4, SiO2, TOTN, TOTP, POC, PN, PP, TSM)
+#df_sel <- rename(df_sel, Salinitet = Saltholdighet)
+
+str(df_sel)
+
+```
+
+### 3. Save
+```{r}
+
+# location: C:/Data/Helene_Work/OKOKYST_2021_25/OKOKYST-Klima/Datasett
+
+# tab-delimited text file
+write.table(df_sel, "Datasett/OKOKYST_Klima_cleaned.txt", sep="\t")
+# comma separated
+write.csv(df_sel, file = "Datasett/OKOKYST_Klima_cleaned.csv")
+
+
+```				 			
+
+
+
+
