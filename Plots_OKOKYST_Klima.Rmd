@@ -19,8 +19,8 @@ library(patchwork) # for arranging plots in panels
 # RColorBrewer::display.brewer.all()
 ```
 
+
 ## 1. Read and clean files
-R_Suspendert_gløderest	Siktdyp	SiO2	STS	Temperatur	Tetthetsanomali	TOTN	TOTN_old_EF	TOTP	TOTP_P	TSM
 ### a. read
 * this file is produced in script "Read_and_check_OKOKYST_Klima.Rmd"
 ```{r}
@@ -58,61 +58,6 @@ theme_set(theme_minimal())
 
 
 str (df)
-```
-
-## 2. Exploratory plots 
-
-### a. Boxplots
-```{r}
-# look at ranges
-ggplot(df_sel, aes(DOC, fill = StationId)) + 
-  geom_boxplot() 
-
-ggsave ("Figures/Boxplot_DOC_fullrange.png", width = 8, height = 6, dpi=500)
-
-# remove two very high DOC obs: very high DOC (25 mg/L) for VT71 in 2020, approx 18 mg/L for VT16 - remove
-df_sel <- subset(df_sel, DOC < 5)
-
-ggplot(df_sel, aes(DOC, fill = StationId)) + 
-  geom_boxplot() 
-
-ggsave ("Figures/Boxplot_DOC_below5.png", width = 8, height = 6, dpi=500)
-
-ggplot(df_sel, aes(Salinitet, fill = StationId)) + 
-  geom_boxplot() 
-
-ggplot(df_sel, aes(Temperatur, fill = StationId)) + 
-  geom_boxplot() 
-
-ggplot(df_sel, aes(NH4, fill = StationId)) + 
-  geom_boxplot() 
-
-ggplot(df_sel, aes(TSM, fill = StationId)) + 
-  geom_boxplot() 
-
-ggsave ("Figures/Boxplot_TSM.png", width = 8, height = 6, dpi=500)
-
-ggplot(df_sel, aes(POC, fill = StationId)) + 
-  geom_boxplot() 
-
-ggsave ("Figures/Boxplot_POC.png", width = 8, height = 6, dpi=500)
-
-ggplot(df_sel, aes(PN, fill = StationId)) + 
-  geom_boxplot() 
-
-ggsave ("Figures/Boxplot_PN.png", width = 8, height = 6, dpi=500)
-
-ggplot(df_sel, aes(PP, fill = StationId)) + 
-  geom_boxplot() 
-
-ggsave ("Figures/Boxplot_PP.png", width = 8, height = 6, dpi=500)
-
-ggplot(df_sel, aes(NO3_NO2, fill = StationId)) + 
-  geom_boxplot() 
-
-
-
-
 ```
 
 
