@@ -130,6 +130,10 @@ df_sel <-  select (df, StationId, Date,  Depth1,  Depth2, Salinitet, Temperatur,
 # remove the two high DOC concentrations (see below), but retain all rows that have NA
 df_sel2 <- df_sel %>% filter((DOC < 5)  %>% replace_na(TRUE))
 
+
+#remove duplication of rows due to multiple projects
+df_sel3 <- distinct (df_sel2)
+
 #str(df_sel)
 
 ```
@@ -195,9 +199,9 @@ ggplot(df_sel, aes(NO3_NO2, fill = StationId)) +
 # location: C:/Data/Helene_Work/OKOKYST_2021_25/OKOKYST-Klima/Datasett
 
 # tab-delimited text file
-write.table(df_sel2, "Datasett/OKOKYST_Klima_cleaned.txt", sep="\t")
+write.table(df_sel3, "Datasett/OKOKYST_Klima_cleaned.txt", sep="\t")
 # comma separated
-write.csv(df_sel2, file = "Datasett/OKOKYST_Klima_cleaned.csv")
+write.csv(df_sel3, file = "Datasett/OKOKYST_Klima_cleaned.csv")
 
 
 ```				 			
