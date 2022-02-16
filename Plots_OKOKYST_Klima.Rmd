@@ -1,7 +1,7 @@
 ---
 title: "Plotting/analyses of ØKOKYST FerryBox"
 author: "Helene Frigstad"
-date: "3 december 2021"
+date: "15 feb 2022"
 output: html_notebook
 
 ---
@@ -20,27 +20,27 @@ library(patchwork) # for arranging plots in panels
 ```
 
 ## 1. Read and clean files
-
+R_Suspendert_gløderest	Siktdyp	SiO2	STS	Temperatur	Tetthetsanomali	TOTN	TOTN_old_EF	TOTP	TOTP_P	TSM
 ### a. read
-* this file is produced in script "Read_OKOKYST_FerryBox.Rmd"
+* this file is produced in script "Read_and_check_OKOKYST_Klima.Rmd"
 ```{r}
 
 dir("Datasett")
 
-df <- read.delim ("Datasett/OKOKYST_FerryBox_cleaned.txt")
+df <- read.delim ("Datasett/OKOKYST_Klima_cleaned.txt")
 
-#units (from similar NIVAlab file)
-#DOC	Fluorescens	KlfA	NH4_N	Nitrogen part	NO3_NO2_N	O2_2	O2	O2_metning	PO4_P	POC	Salinitet	SGR_Suspendert_gløderest	Siktdyp	SiO2	STS	Temperatur	Tetthetsanomali	TOTN	TOTN_old_EF	TOTP	TOTP_P	TSM	Turbiditet
-#mg/L C	µg/l	µg/l	µg/l	µg/l N	µg/l	mg/l	ml/l	%	µg/l	µg/l C		mg/l	m	mg/l	mg/l	C	kg/m3	µg/l	µg/l	µg/l	µg/l P	mg/l	FNU
+#units
+#DOC	Fluorescens	KlfA	NH4-N	Nitrogen part	NO3+NO2-N	O2	O2	O2 (metning)	PO4-P	POC	P-PO4	Salinitet	SGR - Suspendert gløderest	Siktdyp	SiO2	STS	Temperatur	Tetthetsanomali	TOTN	TOTP	TOTP_P	TSM	Turbiditet
+#mg/L C	µg/l	µg/l	µg/l	µg/l N	µg/l	mg/L	ml/l	%	µg/l	µg/l C	µg/l P		mg/l	m	mg/l	mg/l	C	kg/m3	µg/l	µg/l	µg/l P	mg/l	FNU
 
 # convert back to Date
 df$Date <- as.Date(df$Date)
 str(df)
 
 # station naming
-df$StationCode <- as.factor (df$StationCode)
+df$StationId <- as.factor (df$StationId)
 #order stations from along coastline for ggplot
-df$StationCode <- factor(df$StationCode, levels = c("VT4", "VT12", "VT72", "VT23", "VT45", "VT22", "VT80", "VR25", "VR23", "VT76"))
+df$StationId <- factor(df$StationId, levels = c("VT3", "VT16", "VT71", "VR54", "VR58", "VR21"))
 
 ```
 
