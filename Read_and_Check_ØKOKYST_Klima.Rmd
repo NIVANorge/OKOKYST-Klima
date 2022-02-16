@@ -122,7 +122,7 @@ df <- distinct (df)
 
 
 # keep only relevant cols and rename
-str(df)
+#str(df)
 
 df_sel <-  select (df, StationId, Date,  Depth1,  Depth2, Salinitet, Temperatur, Siktdyp, Turbiditet, DOC, KlfA, O2_mg, O2_ml, NO3_NO2, NH4, PO4, SiO2, TOTN, TOTP, POC, PN, PP, TSM)
 #df_sel <- rename(df_sel, Salinitet = Saltholdighet)
@@ -189,7 +189,7 @@ ggplot(df_sel, aes(NO3_NO2, fill = StationId)) +
 
 ```
 
-### 3. Save
+## 3. Save
 ```{r}
 
 # location: C:/Data/Helene_Work/OKOKYST_2021_25/OKOKYST-Klima/Datasett
