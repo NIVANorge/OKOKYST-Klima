@@ -28,6 +28,7 @@ library(patchwork) # for arranging plots in panels
 dir("Datasett")
 
 df <- read.delim ("Datasett/OKOKYST_Klima_cleaned.txt")
+df2 <- read.delim ("Datasett/OKOKYST_Klima_cleaned_merged.txt")
 
 #units
 #DOC	Fluorescens	KlfA	NH4-N	Nitrogen part	NO3+NO2-N	O2	O2	O2 (metning)	PO4-P	POC	P-PO4	Salinitet	SGR - Suspendert gløderest	Siktdyp	SiO2	STS	Temperatur	Tetthetsanomali	TOTN	TOTP	TOTP_P	TSM	Turbiditet
@@ -309,7 +310,7 @@ ggsave ("Figures/TOTP_FBstations_V2.png", width = 8, height = 6, dpi=500)
 df %>%
   gather("Var", "Concentration", DOC:TOTN) %>%
   mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT4") %>%
+  filter(StationId == "VT4") %>%
   ggplot(aes(Date, Concentration)) +
     geom_smooth() +
     geom_point() +
@@ -321,7 +322,7 @@ ggsave("Figures/VT4_allvars.png")
 df %>%
   gather("Var", "Concentration", DOC:TOTN) %>%
   mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT12") %>%
+  filter(StationId == "VT12") %>%
   ggplot(aes(Date, Concentration)) +
     geom_smooth() +
     geom_point() +
@@ -334,7 +335,7 @@ ggsave("Figures/VT12_allvars.png")
 df %>%
   gather("Var", "Concentration", DOC:TOTN) %>%
   mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT72") %>%
+  filter(StationId == "VT72") %>%
   ggplot(aes(Date, Concentration)) +
     geom_smooth() +
     geom_point() +
@@ -346,7 +347,7 @@ ggsave("Figures/VT72_allvars.png")
 df %>%
   gather("Var", "Concentration", DOC:TOTN) %>%
   mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT23") %>%
+  filter(StationId == "VT23") %>%
   ggplot(aes(Date, Concentration)) +
     geom_smooth() +
     geom_point() +
@@ -358,7 +359,7 @@ ggsave("Figures/VT23_allvars.png")
 df %>%
   gather("Var", "Concentration", DOC:TOTN) %>%
   mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT80") %>%
+  filter(StationId == "VT80") %>%
   ggplot(aes(Date, Concentration)) +
     geom_smooth() +
     geom_point() +
@@ -370,7 +371,7 @@ ggsave("Figures/VT80_allvars.png")
 df %>%
   gather("Var", "Concentration", DOC:TOTN) %>%
   mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT22") %>%
+  filter(StationId == "VT22") %>%
   ggplot(aes(Date, Concentration)) +
     geom_smooth() +
     geom_point() +
@@ -382,7 +383,7 @@ ggsave("Figures/VT22_allvars.png")
 df %>%
   gather("Var", "Concentration", DOC:TOTN) %>%
   mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT45") %>%
+  filter(StationId == "VT45") %>%
   ggplot(aes(Date, Concentration)) +
     geom_smooth() +
     geom_point() +
@@ -394,7 +395,7 @@ ggsave("Figures/VT45_allvars.png")
 df %>%
   gather("Var", "Concentration", DOC:TOTN) %>%
   mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VR25") %>%
+  filter(StationId == "VR25") %>%
   ggplot(aes(Date, Concentration)) +
     geom_smooth() +
     geom_point() +
@@ -406,7 +407,7 @@ ggsave("Figures/VR25_allvars.png")
 df %>%
   gather("Var", "Concentration", DOC:TOTN) %>%
   mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VR23") %>%
+  filter(StationId == "VR23") %>%
   ggplot(aes(Date, Concentration)) +
     geom_smooth() +
     geom_point() +
@@ -418,7 +419,7 @@ ggsave("Figures/VR23_allvars.png")
 df %>%
   gather("Var", "Concentration", DOC:TOTN) %>%
   mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT76") %>%
+  filter(StationId == "VT76") %>%
   ggplot(aes(Date, Concentration)) +
     geom_smooth() +
     geom_point() +
@@ -471,7 +472,7 @@ ggsave ("Figures/NH4_FBstations_monthly.png", width = 8, height = 6, dpi=500)
 ```
 
 
-### e. Property-property plots
+### f. Property-property plots
 ```{r}
 
 range (df$Date)
