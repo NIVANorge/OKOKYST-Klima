@@ -36,16 +36,22 @@ df2 <- read.delim ("Datasett/OKOKYST_Klima_cleaned_merged.txt")
 df<-df2
 # convert back to Date
 df$Date <- as.Date(df$Date)
+
 str(df)
 
 # station naming
 df$StationId <- as.factor (df$StationId)
 #order stations from along coastline for ggplot
+
 df$StationId <- factor(df$StationId, levels = c("VT3", "VT16", "VT71", "VR54", "VR58", "VR21"))
 
-```
+## Add months as nr and names
+df<- df  %>% mutate(Month=Date, Month_txt=Date)
+df$Month<- strftime(df$Month,"%m")
+df$Month_txt<- strftime(df$Month_txt,"%B")
 
-## 2. Plots
+```
+$MonthPlots
 
 ### a. Set common options for ggplot
 ```{r}
@@ -174,6 +180,45 @@ df %>%
   ggplot(aes(Salinitet, DOC)) + 
     geom_point() +
     facet_wrap(~StationId, ncol=2)
+
+# DOC vs cDOM
+df %>%
+  filter(DOC > 0 & a_443 > 0)%>%
+    filter(DOC < 3) %>%
+  ggplot(aes(DOC, a_443)) + 
+    geom_point() +
+    geom_smooth(method = lm, se = FALSE) + 
+    facet_wrap(~Depth1)
+
+ggsave ("Figures/DOC_cdom_.png", width = 8, height = 6, dpi=500)
+
+
+df %>%
+  filter(StationId=="VR21") %>%
+  filter(DOC > 0 & a_443 > 0)%>%
+  ggplot(aes(DOC, a_443)) + 
+    geom_point() +
+    geom_smooth(method = lm, se = FALSE) + 
+    facet_wrap(vars(Depth1))
+
+ggsave ("Figures/DOC_cdom_VR21.png", width = 8, height = 6, dpi=500)
+
+         
+  mod1<-  lm(DOC~a_443, df)
+summary(mod1)
+
+
+
+df %>%
+  filter(StationId=="VR54") %>%
+  filter(DOC > 0 & a_443 > 0)%>%
+   # filter(DOC < 3) %>%
+  ggplot(aes(DOC, a_443)) + 
+    geom_point() +
+    geom_smooth(method = lm, se = FALSE)+ 
+    facet_wrap(~Depth1)
+
+ggsave ("Figures/DOC_cdom_VR54_wrap.png", width = 8, height = 6, dpi=500)
 
 # cdom vs salt
 df %>%
@@ -333,14 +378,14 @@ ggsave ("Figures/TOTP_FBstations_V2.png", width = 8, height = 6, dpi=500)
 # plot cdom
 df %>%
   subset(Date >= "2021-01-01" &  Date <= "2021-12-31") %>%
-  ggplot(aes(Date, a_443)) + 
-    geom_point() + geom_line() +
+  ggplot(aes(Date, a_443, Fill=)) + 
+    geom_point() +
     facet_wrap(~StationId, ncol=2) +
       labs(title = "", x = "", y = "cDOM (ug/l)") +
         scale_x_date(date_breaks = "1 month", date_labels =  "%m-%y") +
         theme(axis.text.x=element_text(angle=60, hjust=1))
 
-ggsave ("Figures/TOTP_FBstations_V2.png", width = 8, height = 6, dpi=500)
+ggsave ("Figures/cDOM_pr_station.png", width = 8, height = 6, dpi=500)
 
 ```
 
@@ -353,11 +398,11 @@ ggsave ("Figures/TOTP_FBstations_V2.png", width = 8, height = 6, dpi=500)
 #"VT4"  "VT12" "VT72" "VT23" "VT45" "VT22" "VT80" "VR25" "VR23" "VT76"
 # for OKOKYST; "VT3"  "VT16" "VT71" "VR54" "VR58" "VR21" 
 
-wide <- df %>%
+df %>%
       subset(Date >= "2021-01-01" &  Date <= "2021-12-31") %>%
   select(-O2_mg, -O2_ml, -NO3_NO2, -NH4, -PO4,-SiO2,  -TOTN, -TOTP)%>%
   gather("Var", "Concentration",  Salinitet:Slope) %>%
-  mutate(Var=factor(Var, levels = c("Salinitet","Temperatur","Turbiditet", "Siktdyp", "DOC", "KlfA", "PN", "PP", "TSM","a_443")))  %>%
+  mutate(Var=factor(Var, levels = c("Salinitet","Temperatur","Turbiditet", "Siktdyp", "DOC", "KlfA",   "POC", "PN", "PP", "TSM","a_443", "Slope")))  %>%
   filter(StationId == "VT16") %>%
   ggplot(aes(Date, Concentration)) +
     geom_smooth() +
@@ -527,9 +572,9 @@ range (df$Date)
 
 # DOC vs salt
 df %>%
-  ggplot(aes(Sal_FB, DOC)) + 
+  ggplot(aes(Salinitet, DOC)) + 
     geom_point() +
-    facet_wrap(~StationCode, ncol=5)
+    facet_wrap(~StationId, ncol=5)
 
 ggsave("Figures/DOCvsSal.png")
 
@@ -552,15 +597,15 @@ str (df)
 
 ## vs more variables, for one station at a time
 # rename variables for facet labels
-new_labels <- c("Sal_FB" = "Salinitet", "KlfA" =  "Chl a (ug/l)", "NH4" =  "NH4 (ug/l)")
+new_labels <- c("a_443" = "cDOM", "KlfA" =  "Chl a (ug/l)", "NH4" =  "NH4 (ug/l)")
 
 #"VT4"  "VT12" "VT72" "VT23" "VT45" "VT22" "VT80" "VR25" "VR23" "VT76"
 
 df %>%
-  filter(StationCode == "VT12") %>%
-  gather(key = "var", value = "value", Sal_FB, KlfA, NH4) %>%
-  mutate(var=factor(var, levels = c("Sal_FB", "NH4", "KlfA")))  %>%
-  ggplot(aes(x = value, y = DOC)) + 
+  filter(StationId == "VT12") %>%
+  gather(key = "var", value = "value", a_443, KlfA, NH4) %>%
+  mutate(var=factor(var, levels = c("a_443", "NH4", "KlfA")))  %>%
+  ggplot(aes(x = value, y = a_443)) + 
     #ylim (0,3.8) +
     geom_point() +
       facet_wrap(~ var, scales = "free", labeller = labeller(var = new_labels), ncol = 1) +
