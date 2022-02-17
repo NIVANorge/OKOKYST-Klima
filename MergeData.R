@@ -35,12 +35,12 @@ cdom$Date<- as.Date(cdom$Date,format="%Y-%m-%d")  #defining what is the desired 
 aqm$Date<-as.Date(aqm$Date,format="%Y-%m-%d") #defining what is the desired format of your date
 
 #select columns that should be merged
-cdom<- select(cdom, a_443, Slope, Depth1, Depth2, Date, StationID)
+cdom<- select(cdom, a_443, Slope, Depth1, Depth2, Date, StationId)
 
 merge<- left_join(aqm, cdom, by=c("Depth1", "Depth2", "Date",   "StationId")) 
 
 #save merged file
 # tab-delimited text file
-write.table(df_sel3, "Datasett/OKOKYST_Klima_cleaned.txt", sep="\t")
+write.table(merge, "Datasett/OKOKYST_Klima_cleaned_merged.txt", sep="\t")
 # comma separated
-write.csv(df_sel3, file = "Datasett/OKOKYST_Klima_cleaned.csv")
+write.csv(merge, file = "Datasett/OKOKYST_Klima_cleaned_merged.csv")
