@@ -33,7 +33,7 @@ df2 <- read.delim ("Datasett/OKOKYST_Klima_cleaned_merged.txt")
 #units
 #DOC	Fluorescens	KlfA	NH4-N	Nitrogen part	NO3+NO2-N	O2	O2	O2 (metning)	PO4-P	POC	P-PO4	Salinitet	SGR - Suspendert gløderest	Siktdyp	SiO2	STS	Temperatur	Tetthetsanomali	TOTN	TOTP	TOTP_P	TSM	Turbiditet
 #mg/L C	µg/l	µg/l	µg/l	µg/l N	µg/l	mg/L	ml/l	%	µg/l	µg/l C	µg/l P		mg/l	m	mg/l	mg/l	C	kg/m3	µg/l	µg/l	µg/l P	mg/l	FNU
-
+df<-df2
 # convert back to Date
 df$Date <- as.Date(df$Date)
 str(df)
@@ -139,6 +139,32 @@ df %>%
         theme(axis.text.x=element_text(angle=60, hjust=1))
 
 ggsave ("Figures/OKOKYST_Klima/PP_pr_station.png", width = 8, height = 6, dpi=500)
+
+
+df %>%
+  subset(Date >= "2021-01-01" &  Date <= "2021-12-31") %>%
+  ggplot(aes(Date,a_443 )) + 
+    geom_point() + geom_smooth() +
+    facet_wrap(~StationId, ncol=2) +
+      labs(title = "", x = "", y = "Part P ") +
+        scale_x_date(date_breaks = "1 month", date_labels =  "%m-%y")+
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+
+ggsave ("Figures/cDOM_pr_station.png", width = 8, height = 6, dpi=500)
+
+df %>%
+  subset(Date >= "2021-01-01" &  Date <= "2021-12-31") %>%
+  filter(StationId!="VT3")%>%
+  ggplot(aes(Date,a_443 )) + 
+    geom_point() + geom_smooth() +
+    facet_wrap(~StationId, ncol=2) +
+      labs(title = "", x = "", y = "cdom absorption/m ") +
+        scale_x_date(date_breaks = "1 month", date_labels =  "%m-%y")+
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+
+ggsave ("Figures/cDOM_pr_station.png", width = 8, height = 6, dpi=500)
+
+
 ```
 
 ### Property plots
@@ -148,6 +174,13 @@ df %>%
   ggplot(aes(Salinitet, DOC)) + 
     geom_point() +
     facet_wrap(~StationId, ncol=2)
+
+# cdom vs salt
+df %>%
+  ggplot(aes(Salinitet, a_443)) + 
+    geom_point() +
+    facet_wrap(~StationId, ncol=2)
+
 ```
 
 ### Station with depth color coded
@@ -297,6 +330,18 @@ df %>%
 
 ggsave ("Figures/TOTP_FBstations_V2.png", width = 8, height = 6, dpi=500)
 
+# plot cdom
+df %>%
+  subset(Date >= "2021-01-01" &  Date <= "2021-12-31") %>%
+  ggplot(aes(Date, a_443)) + 
+    geom_point() + geom_line() +
+    facet_wrap(~StationId, ncol=2) +
+      labs(title = "", x = "", y = "cDOM (ug/l)") +
+        scale_x_date(date_breaks = "1 month", date_labels =  "%m-%y") +
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+
+ggsave ("Figures/TOTP_FBstations_V2.png", width = 8, height = 6, dpi=500)
+
 ```
 
 
@@ -306,18 +351,21 @@ ggsave ("Figures/TOTP_FBstations_V2.png", width = 8, height = 6, dpi=500)
 #str(df)
 #levels (df$StationCode)
 #"VT4"  "VT12" "VT72" "VT23" "VT45" "VT22" "VT80" "VR25" "VR23" "VT76"
+# for OKOKYST; "VT3"  "VT16" "VT71" "VR54" "VR58" "VR21" 
 
-df %>%
-  gather("Var", "Concentration", DOC:TOTN) %>%
-  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationId == "VT4") %>%
+wide <- df %>%
+      subset(Date >= "2021-01-01" &  Date <= "2021-12-31") %>%
+  select(-O2_mg, -O2_ml, -NO3_NO2, -NH4, -PO4,-SiO2,  -TOTN, -TOTP)%>%
+  gather("Var", "Concentration",  Salinitet:Slope) %>%
+  mutate(Var=factor(Var, levels = c("Salinitet","Temperatur","Turbiditet", "Siktdyp", "DOC", "KlfA", "PN", "PP", "TSM","a_443")))  %>%
+  filter(StationId == "VT16") %>%
   ggplot(aes(Date, Concentration)) +
     geom_smooth() +
     geom_point() +
     facet_wrap(~Var, scales = "free_y", ncol = 2)+
-    ggtitle("VT4")
+    ggtitle("VT16")
 
-ggsave("Figures/VT4_allvars.png")
+ggsave("Figures/VT16_allvars.png")
 
 df %>%
   gather("Var", "Concentration", DOC:TOTN) %>%
@@ -393,7 +441,7 @@ df %>%
 ggsave("Figures/VT45_allvars.png")
 
 df %>%
-  gather("Var", "Concentration", DOC:TOTN) %>%
+  gather("Var", "Concentration", Salinitet:Slope) %>%
   mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
   filter(StationId == "VR25") %>%
   ggplot(aes(Date, Concentration)) +
