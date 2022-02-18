@@ -15,13 +15,16 @@ library(lubridate)
 library(readxl)
 library(tidyr)
 library(RColorBrewer)
+library(colorRamps)
 library(patchwork) # for arranging plots in panels
 # RColorBrewer::display.brewer.all()
+#install.packages("colorRamps")
+
 ```
 
 
-## 1. Read and clean files
-### a. read
+## 1. Read and fix files
+### 1.1 read
 * this file is produced in script "Read_and_check_OKOKYST_Klima.Rmd"
 ```{r}
 
@@ -33,11 +36,12 @@ df2 <- read.delim ("Datasett/OKOKYST_Klima_cleaned_merged.txt")
 #units
 #DOC	Fluorescens	KlfA	NH4-N	Nitrogen part	NO3+NO2-N	O2	O2	O2 (metning)	PO4-P	POC	P-PO4	Salinitet	SGR - Suspendert gløderest	Siktdyp	SiO2	STS	Temperatur	Tetthetsanomali	TOTN	TOTP	TOTP_P	TSM	Turbiditet
 #mg/L C	µg/l	µg/l	µg/l	µg/l N	µg/l	mg/L	ml/l	%	µg/l	µg/l C	µg/l P		mg/l	m	mg/l	mg/l	C	kg/m3	µg/l	µg/l	µg/l P	mg/l	FNU
-df<-df2
+
+df<-df2 # use for all parameters
 # convert back to Date
 df$Date <- as.Date(df$Date)
 
-str(df)
+#str(df)
 
 # station naming
 df$StationId <- as.factor (df$StationId)
@@ -50,10 +54,12 @@ df<- df  %>% mutate(Month=Date, Month_txt=Date)
 df$Month<- strftime(df$Month,"%m")
 df$Month_txt<- strftime(df$Month_txt,"%B")
 
-```
-$MonthPlots
 
-### a. Set common options for ggplot
+
+```
+
+
+### 1.2 Set common options for ggplot
 ```{r}
 theme_set(theme_minimal())
 
@@ -68,7 +74,109 @@ str (df)
 ```
 
 
-### b. Timeseries pr station
+#2 Plots for report klima parameters
+
+### 2.1 Property plots
+
+### 2.1.1 VR21
+```{r}
+#colours for depth
+rainbow(5)
+mycols <- colors()[c("#FF0000FF", "#CCFF00FF", "#00FF66FF", "#0066FFFF" , "#CC00FFFF" )]
+#station VT21
+VT21<- df %>%
+  filter(StationId=="VR21") 
+
+# DOC vs cDOM
+df_sel <-VT21 %>%
+  filter(DOC > 0 & a_443 > 0)%>%
+   filter(StationId=="VR21")
+df_sel$Depth1<- as.factor(df_sel$Depth1)
+  #  filter(DOC < 3) %>%
+#plot
+DOC_cdom_plot <-   
+  ggplot(df_sel,aes(DOC, a_443, colour=Depth1)) + 
+    geom_point() +
+    theme_bw()+  labs(title = "VR21", x = expression(paste("DOC mg ", L^{-1})), y= expression(paste("cDOM absorption,  ", m^{-1}))) +
+#    scale_colour_gradientn(colours=rainbow(5),  name = "Depth, m")+
+ #  scale_size_continious(drop=FALSE)+
+ scale_colour_manual(breaks = c(0, 5, 10, 20, 30),labels = paste(c(0, 5, 10, 20,30)),values=c("#FF0000FF", "#CCFF00FF", "#00FF66FF", "#0066FFFF" , "#CC00FFFF" ),
+     guide = guide_legend(title = "Depth, m"))+
+  geom_smooth( method = lm, se = FALSE, col="black")
+  
+#update_labels(DOC_cdom_plot, list(colour="Depth, m"))
+
+DOC_cdom_plot #activate to check plot
+
+ # DOC vs Kla....
+df %>%
+  filter(StationId=="VR21") %>%
+  filter(DOC > 0 & a_443 > 0)%>%
+  ggplot(aes(DOC, a_443)) + 
+    geom_point() +
+  labs(title = "VR21", x = expression(paste("DOC mg, ", L^{-1})), y= expression(paste("cDOM absorption,  ", m^{-1})))+ 
+
+
+
+    facet_wrap(vars(Depth1))
+
+ggsave ("Figures/DOC_cdom_VR21.png", width = 8, height = 6, dpi=500)
+
+         
+  mod1<-  lm(DOC~a_443, df)
+summary(mod1)
+
+
+
+df %>%
+  filter(StationId=="VR54") %>%
+  filter(DOC > 0 & a_443 > 0)%>%
+   # filter(DOC < 3) %>%
+  ggplot(aes(DOC, a_443)) + 
+    geom_point() +
+    geom_smooth(method = lm, se = FALSE)+ 
+    facet_wrap(~Depth1)
+
+ggsave ("Figures/DOC_cdom_VR21.png", width = 8, height = 6, dpi=500)
+
+# cdom vs salt
+df %>%
+  ggplot(aes(Salinitet, a_443)) + 
+    geom_point() +
+    facet_wrap(~StationId, ncol=2)
+
+# DOC vs salt
+df %>%
+  ggplot(aes(Salinitet, DOC)) + 
+    geom_point() +
+    facet_wrap(~StationId, ncol=2)
+#To save each plot
+#ggsave ("Figures/DOC_cdom_.png", width = 8, height = 6, dpi=500)
+
+
+```
+
+
+### 2.2 Combine figures (with patchwork library)
+```{r}
+# combine figures, here combine two NO3 for different stations
+#NB can of curse combine different variables for one station as well
+NO3 <- VR54_NO3 + VT71_NO3 + plot_layout(ncol = 1)
+plot (NO3)
+ggsave("Figures/NO3_panel.png", plot = NO3)
+
+ggsave ("Figures/DOC_cdom_.png", width = 8, height = 6, dpi=500)
+
+
+```
+### 2.1.1 VR54 starts here....
+
+
+### Old scripts for use/inspiration
+
+
+
+### Timeseries pr station
 ```{r}
 str(df)
 
@@ -173,60 +281,6 @@ ggsave ("Figures/cDOM_pr_station.png", width = 8, height = 6, dpi=500)
 
 ```
 
-### Property plots
-```{r}
-# DOC vs salt
-df %>%
-  ggplot(aes(Salinitet, DOC)) + 
-    geom_point() +
-    facet_wrap(~StationId, ncol=2)
-
-# DOC vs cDOM
-df %>%
-  filter(DOC > 0 & a_443 > 0)%>%
-    filter(DOC < 3) %>%
-  ggplot(aes(DOC, a_443)) + 
-    geom_point() +
-    geom_smooth(method = lm, se = FALSE) + 
-    facet_wrap(~Depth1)
-
-ggsave ("Figures/DOC_cdom_.png", width = 8, height = 6, dpi=500)
-
-
-df %>%
-  filter(StationId=="VR21") %>%
-  filter(DOC > 0 & a_443 > 0)%>%
-  ggplot(aes(DOC, a_443)) + 
-    geom_point() +
-    geom_smooth(method = lm, se = FALSE) + 
-    facet_wrap(vars(Depth1))
-
-ggsave ("Figures/DOC_cdom_VR21.png", width = 8, height = 6, dpi=500)
-
-         
-  mod1<-  lm(DOC~a_443, df)
-summary(mod1)
-
-
-
-df %>%
-  filter(StationId=="VR54") %>%
-  filter(DOC > 0 & a_443 > 0)%>%
-   # filter(DOC < 3) %>%
-  ggplot(aes(DOC, a_443)) + 
-    geom_point() +
-    geom_smooth(method = lm, se = FALSE)+ 
-    facet_wrap(~Depth1)
-
-ggsave ("Figures/DOC_cdom_VR54_wrap.png", width = 8, height = 6, dpi=500)
-
-# cdom vs salt
-df %>%
-  ggplot(aes(Salinitet, a_443)) + 
-    geom_point() +
-    facet_wrap(~StationId, ncol=2)
-
-```
 
 ### Station with depth color coded
 ```{r}
@@ -247,7 +301,7 @@ ggplot(aes(Date, DOC)) +
 
 
 
-### b. Plots pr variable
+### Plots pr variable
 ```{r}
 
 #, scales = "free_y"
@@ -390,7 +444,7 @@ ggsave ("Figures/cDOM_pr_station.png", width = 8, height = 6, dpi=500)
 ```
 
 
-### c. Plots pr FB station
+### Plots pr FB station
 
 ```{r}
 #str(df)
@@ -524,7 +578,7 @@ ggsave("Figures/VT76_allvars.png")
 
 ```
 
-### d. DOC timeser with COVID shutdown of Trollfjord
+### DOC timeser with COVID shutdown of Trollfjord
 ```{r}
 df %>%
   ggplot(aes(Date, DOC)) + 
@@ -539,7 +593,7 @@ df %>%
 ggsave ("Figures/DOC_FBstations_COVID.png", width = 8, height = 6, dpi=500)
 ```
 
-### e. Monthly climatologies
+### Monthly climatologies
 ```{r}
 str(df)
 df_m <- df %>%
@@ -565,7 +619,7 @@ ggsave ("Figures/NH4_FBstations_monthly.png", width = 8, height = 6, dpi=500)
 ```
 
 
-### f. Property-property plots
+### Property-property plots
 ```{r}
 
 range (df$Date)
