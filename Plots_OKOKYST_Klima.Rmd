@@ -15,13 +15,16 @@ library(lubridate)
 library(readxl)
 library(tidyr)
 library(RColorBrewer)
+library(colorRamps)
 library(patchwork) # for arranging plots in panels
 # RColorBrewer::display.brewer.all()
+#install.packages("colorRamps")
+
 ```
 
 
-## 1. Read and clean files
-### a. read
+## 1. Read and fix files
+### 1.1 read
 * this file is produced in script "Read_and_check_OKOKYST_Klima.Rmd"
 ```{r}
 
@@ -31,25 +34,36 @@ library(patchwork) # for arranging plots in panels
 dir("Datasett")
 
 df <- read.delim ("Datasett/OKOKYST_Klima_cleaned.txt")
+df2 <- read.delim ("Datasett/OKOKYST_Klima_cleaned_merged.txt")
 
 #units
 #DOC	Fluorescens	KlfA	NH4-N	Nitrogen part	NO3+NO2-N	O2	O2	O2 (metning)	PO4-P	POC	P-PO4	Salinitet	SGR - Suspendert gløderest	Siktdyp	SiO2	STS	Temperatur	Tetthetsanomali	TOTN	TOTP	TOTP_P	TSM	Turbiditet
 #mg/L C	µg/l	µg/l	µg/l	µg/l N	µg/l	mg/L	ml/l	%	µg/l	µg/l C	µg/l P		mg/l	m	mg/l	mg/l	C	kg/m3	µg/l	µg/l	µg/l P	mg/l	FNU
 
+df<-df2 # use for all parameters
 # convert back to Date
 df$Date <- as.Date(df$Date)
+
 #str(df)
 
 # station naming
 df$StationId <- as.factor (df$StationId)
-#order stations along coastline for ggplot
+
+
+#order stations from along coastline for ggplot
 df$StationId <- factor(df$StationId, levels = c("VT3", "VT16", "VT71", "VR54", "VR58", "VR21"))
+
+## Add months as nr and names
+df<- df  %>% mutate(Month=Date, Month_txt=Date)
+df$Month<- strftime(df$Month,"%m")
+df$Month_txt<- strftime(df$Month_txt,"%B")
+
+
 
 ```
 
-## 2. Plots
 
-### a. Set common options for ggplot
+### 1.2 Set common options for ggplot
 ```{r}
 theme_set(theme_minimal())
 
@@ -64,7 +78,109 @@ str (df)
 ```
 
 
-### b. Plots pr variable
+#2 Plots for report klima parameters
+
+### 2.1 Property plots
+
+### 2.1.1 VR21
+```{r}
+#colours for depth
+rainbow(5)
+mycols <- colors()[c("#FF0000FF", "#CCFF00FF", "#00FF66FF", "#0066FFFF" , "#CC00FFFF" )]
+#station VT21
+VT21<- df %>%
+  filter(StationId=="VR21") 
+
+# DOC vs cDOM
+df_sel <-VT21 %>%
+  filter(DOC > 0 & a_443 > 0)%>%
+   filter(StationId=="VR21")
+df_sel$Depth1<- as.factor(df_sel$Depth1)
+  #  filter(DOC < 3) %>%
+#plot
+DOC_cdom_plot <-   
+  ggplot(df_sel,aes(DOC, a_443, colour=Depth1)) + 
+    geom_point() +
+    theme_bw()+  labs(title = "VR21", x = expression(paste("DOC mg ", L^{-1})), y= expression(paste("cDOM absorption,  ", m^{-1}))) +
+#    scale_colour_gradientn(colours=rainbow(5),  name = "Depth, m")+
+ #  scale_size_continious(drop=FALSE)+
+ scale_colour_manual(breaks = c(0, 5, 10, 20, 30),labels = paste(c(0, 5, 10, 20,30)),values=c("#FF0000FF", "#CCFF00FF", "#00FF66FF", "#0066FFFF" , "#CC00FFFF" ),
+     guide = guide_legend(title = "Depth, m"))+
+  geom_smooth( method = lm, se = FALSE, col="black")
+  
+#update_labels(DOC_cdom_plot, list(colour="Depth, m"))
+
+DOC_cdom_plot #activate to check plot
+
+ # DOC vs Kla....
+df %>%
+  filter(StationId=="VR21") %>%
+  filter(DOC > 0 & a_443 > 0)%>%
+  ggplot(aes(DOC, a_443)) + 
+    geom_point() +
+  labs(title = "VR21", x = expression(paste("DOC mg, ", L^{-1})), y= expression(paste("cDOM absorption,  ", m^{-1})))+ 
+
+
+
+    facet_wrap(vars(Depth1))
+
+ggsave ("Figures/DOC_cdom_VR21.png", width = 8, height = 6, dpi=500)
+
+         
+  mod1<-  lm(DOC~a_443, df)
+summary(mod1)
+
+
+
+df %>%
+  filter(StationId=="VR54") %>%
+  filter(DOC > 0 & a_443 > 0)%>%
+   # filter(DOC < 3) %>%
+  ggplot(aes(DOC, a_443)) + 
+    geom_point() +
+    geom_smooth(method = lm, se = FALSE)+ 
+    facet_wrap(~Depth1)
+
+ggsave ("Figures/DOC_cdom_VR21.png", width = 8, height = 6, dpi=500)
+
+# cdom vs salt
+df %>%
+  ggplot(aes(Salinitet, a_443)) + 
+    geom_point() +
+    facet_wrap(~StationId, ncol=2)
+
+# DOC vs salt
+df %>%
+  ggplot(aes(Salinitet, DOC)) + 
+    geom_point() +
+    facet_wrap(~StationId, ncol=2)
+#To save each plot
+#ggsave ("Figures/DOC_cdom_.png", width = 8, height = 6, dpi=500)
+
+
+```
+
+
+### 2.2 Combine figures (with patchwork library)
+```{r}
+# combine figures, here combine two NO3 for different stations
+#NB can of curse combine different variables for one station as well
+NO3 <- VR54_NO3 + VT71_NO3 + plot_layout(ncol = 1)
+plot (NO3)
+ggsave("Figures/NO3_panel.png", plot = NO3)
+
+ggsave ("Figures/DOC_cdom_.png", width = 8, height = 6, dpi=500)
+
+
+```
+### 2.1.1 VR54 starts here....
+
+
+### Old scripts for use/inspiration
+
+
+
+### Timeseries pr station
 ```{r}
 #str(df)
 
@@ -116,153 +232,37 @@ df %>%
         scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y")+
         theme(axis.text.x=element_text(angle=60, hjust=1))
 
-ggsave ("Figures/PP_pr_station.png", width = 8, height = 6, dpi=500)
+ggsave ("Figures/OKOKYST_Klima/PP_pr_station.png", width = 8, height = 6, dpi=500)
 
-str(df)
+
 df %>%
-  ggplot(aes(Date, O2_ml)) + 
-    geom_point() +
+  subset(Date >= "2021-01-01" &  Date <= "2021-12-31") %>%
+  ggplot(aes(Date,a_443 )) + 
+    geom_point() + geom_smooth() +
     facet_wrap(~StationId, ncol=2) +
-      labs(title = "", x = "", y = "O2 ") +
-        scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y")+
+      labs(title = "", x = "", y = "Part P ") +
+        scale_x_date(date_breaks = "1 month", date_labels =  "%m-%y")+
         theme(axis.text.x=element_text(angle=60, hjust=1))
 
-ggsave ("Figures/PP_pr_station.png", width = 8, height = 6, dpi=500)
-```
-
-### b. Plots pr station
-
-```{r}
-str(df)
-#levels (df$StationCode)
-#"VT4"  "VT12" "VT72" "VT23" "VT45" "VT22" "VT80" "VR25" "VR23" "VT76"
+ggsave ("Figures/cDOM_pr_station.png", width = 8, height = 6, dpi=500)
 
 df %>%
-  gather("Var", "Concentration", DOC:TOTN) %>%
-  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT4") %>%
-  ggplot(aes(Date, Concentration)) +
-    geom_smooth() +
-    geom_point() +
-    facet_wrap(~Var, scales = "free_y", ncol = 2)+
-    ggtitle("VT4")
+  subset(Date >= "2021-01-01" &  Date <= "2021-12-31") %>%
+  filter(StationId!="VT3")%>%
+  ggplot(aes(Date,a_443 )) + 
+    geom_point() + geom_smooth() +
+    facet_wrap(~StationId, ncol=2) +
+      labs(title = "", x = "", y = "cdom absorption/m ") +
+        scale_x_date(date_breaks = "1 month", date_labels =  "%m-%y")+
+        theme(axis.text.x=element_text(angle=60, hjust=1))
 
-ggsave("Figures/VT4_allvars.png")
-
-df %>%
-  gather("Var", "Concentration", DOC:TOTN) %>%
-  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT12") %>%
-  ggplot(aes(Date, Concentration)) +
-    geom_smooth() +
-    geom_point() +
-    facet_wrap(~Var, scales = "free_y", ncol = 2)+
-    ggtitle("VT12")
-
-ggsave("Figures/VT12_allvars.png")
-
-
-df %>%
-  gather("Var", "Concentration", DOC:TOTN) %>%
-  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT72") %>%
-  ggplot(aes(Date, Concentration)) +
-    geom_smooth() +
-    geom_point() +
-    facet_wrap(~Var, scales = "free_y", ncol = 2)+
-    ggtitle("VT72")
-
-ggsave("Figures/VT72_allvars.png")
-
-df %>%
-  gather("Var", "Concentration", DOC:TOTN) %>%
-  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT23") %>%
-  ggplot(aes(Date, Concentration)) +
-    geom_smooth() +
-    geom_point() +
-    facet_wrap(~Var, scales = "free_y", ncol = 2)+
-    ggtitle("VT23")
-
-ggsave("Figures/VT23_allvars.png")
-
-df %>%
-  gather("Var", "Concentration", DOC:TOTN) %>%
-  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT80") %>%
-  ggplot(aes(Date, Concentration)) +
-    geom_smooth() +
-    geom_point() +
-    facet_wrap(~Var, scales = "free_y", ncol = 2)+
-    ggtitle("VT80")
-
-ggsave("Figures/VT80_allvars.png")
-
-df %>%
-  gather("Var", "Concentration", DOC:TOTN) %>%
-  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT22") %>%
-  ggplot(aes(Date, Concentration)) +
-    geom_smooth() +
-    geom_point() +
-    facet_wrap(~Var, scales = "free_y", ncol = 2)+
-    ggtitle("VT22")
-
-ggsave("Figures/VT22_allvars.png")
-
-df %>%
-  gather("Var", "Concentration", DOC:TOTN) %>%
-  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT45") %>%
-  ggplot(aes(Date, Concentration)) +
-    geom_smooth() +
-    geom_point() +
-    facet_wrap(~Var, scales = "free_y", ncol = 2)+
-    ggtitle("VT45")
-
-ggsave("Figures/VT45_allvars.png")
-
-df %>%
-  gather("Var", "Concentration", DOC:TOTN) %>%
-  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VR25") %>%
-  ggplot(aes(Date, Concentration)) +
-    geom_smooth() +
-    geom_point() +
-    facet_wrap(~Var, scales = "free_y", ncol = 2)+
-    ggtitle("VR25")
-
-ggsave("Figures/VR25_allvars.png")
-
-df %>%
-  gather("Var", "Concentration", DOC:TOTN) %>%
-  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VR23") %>%
-  ggplot(aes(Date, Concentration)) +
-    geom_smooth() +
-    geom_point() +
-    facet_wrap(~Var, scales = "free_y", ncol = 2)+
-    ggtitle("VR23")
-
-ggsave("Figures/VR23_allvars.png")
-
-df %>%
-  gather("Var", "Concentration", DOC:TOTN) %>%
-  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
-  filter(StationCode == "VT76") %>%
-  ggplot(aes(Date, Concentration)) +
-    geom_smooth() +
-    geom_point() +
-    facet_wrap(~Var, scales = "free_y", ncol = 2)+
-    ggtitle("VT76")
-
-ggsave("Figures/VT76_allvars.png")
+ggsave ("Figures/cDOM_pr_station.png", width = 8, height = 6, dpi=500)
 
 
 ```
 
 
-### d.  Station with depth color coded
+### Station with depth color coded
 ```{r}
 gg_VT4 <- df %>%
   filter(StationId == "VR54") %>%
@@ -281,9 +281,284 @@ ggplot(aes(Date, DOC)) +
 
 
 
+### Plots pr variable
+```{r}
+
+#, scales = "free_y"
+
+# default date axis
+df %>%
+  ggplot(aes(Date, DOC)) + 
+    geom_point() + geom_line() +
+    facet_wrap(~StationCode, ncol=2)
+
+df %>%
+  ggplot(aes(Month, DOC)) + 
+    geom_point() + geom_line() +
+    facet_wrap(~StationCode, ncol=2)
+
+#ggsave ("Figurer/DOC_FBstations.png", width = 8, height = 6, dpi=500)
+
+# plot vars with label every 4nd months
+
+df %>%
+  ggplot(aes(Date, Sal_FB)) + 
+    geom_point() + geom_smooth() +
+    facet_wrap(~StationCode, ncol=2) +
+      labs(title = "", x = "", y = "Salinity") +
+        scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y")+
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+
+ggsave ("Figures/Sal_FBstations_smooth.png", width = 8, height = 6, dpi=500)
+
+df %>%
+  ggplot(aes(Date, Temp_FB)) + 
+    geom_point() + geom_smooth() +
+    facet_wrap(~StationCode, ncol=2) +
+      labs(title = "", x = "", y = "Temperature (C)") +
+        scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y")+
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+
+ggsave ("Figures/Temp_FBstations_smooth.png", width = 8, height = 6, dpi=500)
+
+range (df$Date)
+
+df %>%
+  ggplot(aes(Date, DOC)) + 
+    geom_point() + geom_smooth() +
+    facet_wrap(~StationCode, ncol=2) +
+      labs(title = "", x = "", y = "DOC (mg/L)") +
+        scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y")+
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+
+ggsave ("Figures/DOC_FBstations_smooth.png", width = 8, height = 6, dpi=500)
+
+df %>%
+  ggplot(aes(Date, DOC)) + 
+    geom_point() + geom_smooth() +
+    facet_wrap(~StationCode, ncol=2) +
+      labs(title = "", x = "", y = "DOC (mg/L)") +
+        scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y")+
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+
+ggsave ("Figures/DOC_FBstations_smooth.png", width = 8, height = 6, dpi=500)
+
+# plot Chla
+df %>%
+  ggplot(aes(Date, KlfA)) + 
+    geom_point() + geom_line() +
+    facet_wrap(~StationCode, ncol=2) +
+      labs(title = "", x = "", y = "Chla (ug/l)") +
+        scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y") +
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+
+#ggsave ("Figures/Chla_FBstations.png", width = 8, height = 6, dpi=500)
+
+# plot No3+NO2
+df %>%
+  ggplot(aes(Date, NO3)) + 
+    geom_point() + geom_line() +
+    facet_wrap(~StationCode, ncol=2) +
+      labs(title = "", x = "", y = "NO3 (ug/l)") +
+        scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y") +
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+
+ggsave ("Figures/NO3_FBstations.png", width = 8, height = 6, dpi=500)
+
+# plot NH4
+df %>%
+  ggplot(aes(Date, NH4)) + 
+    geom_point() + geom_smooth() +
+    facet_wrap(~StationCode, ncol=2) +
+      labs(title = "", x = "", y = "NH4 (ug/l)") +
+        scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y") +
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+
+ggsave ("Figures/NH4_FBstations_smooth.png", width = 8, height = 6, dpi=500)
+
+# plot PO4
+df %>%
+  ggplot(aes(Date, PO4)) + 
+    geom_point() + geom_line() +
+    facet_wrap(~StationCode, ncol=2) +
+      labs(title = "", x = "", y = "PO4 (ug/l)") +
+        scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y") +
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+
+ggsave ("Figures/PO4_FBstations_V2.png", width = 8, height = 6, dpi=500)
+
+# plot TotN
+df %>%
+  ggplot(aes(Date, TOTN)) + 
+    geom_point() + geom_line() +
+    facet_wrap(~StationCode, ncol=2) +
+      labs(title = "", x = "", y = "TOTN (ug/l)") +
+        scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y") +
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+
+ggsave ("Figures/TOTN_FBstations_V2.png", width = 8, height = 6, dpi=500)
+
+# plot TotP
+df %>%
+  ggplot(aes(Date, TOTP)) + 
+    geom_point() + geom_line() +
+    facet_wrap(~StationCode, ncol=2) +
+      labs(title = "", x = "", y = "TOTP (ug/l)") +
+        scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y") +
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+
+ggsave ("Figures/TOTP_FBstations_V2.png", width = 8, height = 6, dpi=500)
+
+# plot cdom
+df %>%
+  subset(Date >= "2021-01-01" &  Date <= "2021-12-31") %>%
+  ggplot(aes(Date, a_443, Fill=)) + 
+    geom_point() +
+    facet_wrap(~StationId, ncol=2) +
+      labs(title = "", x = "", y = "cDOM (ug/l)") +
+        scale_x_date(date_breaks = "1 month", date_labels =  "%m-%y") +
+        theme(axis.text.x=element_text(angle=60, hjust=1))
+
+ggsave ("Figures/cDOM_pr_station.png", width = 8, height = 6, dpi=500)
+
+```
 
 
-### e. DOC timeser with COVID shutdown of Trollfjord
+### Plots pr FB station
+```{r}
+str(df)
+#levels (df$StationCode)
+#"VT4"  "VT12" "VT72" "VT23" "VT45" "VT22" "VT80" "VR25" "VR23" "VT76"
+# for OKOKYST; "VT3"  "VT16" "VT71" "VR54" "VR58" "VR21" 
+
+df %>%
+      subset(Date >= "2021-01-01" &  Date <= "2021-12-31") %>%
+  select(-O2_mg, -O2_ml, -NO3_NO2, -NH4, -PO4,-SiO2,  -TOTN, -TOTP)%>%
+  gather("Var", "Concentration",  Salinitet:Slope) %>%
+  mutate(Var=factor(Var, levels = c("Salinitet","Temperatur","Turbiditet", "Siktdyp", "DOC", "KlfA",   "POC", "PN", "PP", "TSM","a_443", "Slope")))  %>%
+  filter(StationId == "VT16") %>%
+  ggplot(aes(Date, Concentration)) +
+    geom_smooth() +
+    geom_point() +
+    facet_wrap(~Var, scales = "free_y", ncol = 2)+
+    ggtitle("VT16")
+
+ggsave("Figures/VT16_allvars.png")
+
+df %>%
+  gather("Var", "Concentration", DOC:TOTN) %>%
+  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
+  filter(StationId == "VT12") %>%
+  ggplot(aes(Date, Concentration)) +
+    geom_smooth() +
+    geom_point() +
+    facet_wrap(~Var, scales = "free_y", ncol = 2)+
+    ggtitle("VT12")
+
+ggsave("Figures/VT12_allvars.png")
+
+
+df %>%
+  gather("Var", "Concentration", DOC:TOTN) %>%
+  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
+  filter(StationId == "VT72") %>%
+  ggplot(aes(Date, Concentration)) +
+    geom_smooth() +
+    geom_point() +
+    facet_wrap(~Var, scales = "free_y", ncol = 2)+
+    ggtitle("VT72")
+
+ggsave("Figures/VT72_allvars.png")
+
+df %>%
+  gather("Var", "Concentration", DOC:TOTN) %>%
+  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
+  filter(StationId == "VT23") %>%
+  ggplot(aes(Date, Concentration)) +
+    geom_smooth() +
+    geom_point() +
+    facet_wrap(~Var, scales = "free_y", ncol = 2)+
+    ggtitle("VT23")
+
+ggsave("Figures/VT23_allvars.png")
+
+df %>%
+  gather("Var", "Concentration", DOC:TOTN) %>%
+  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
+  filter(StationId == "VT80") %>%
+  ggplot(aes(Date, Concentration)) +
+    geom_smooth() +
+    geom_point() +
+    facet_wrap(~Var, scales = "free_y", ncol = 2)+
+    ggtitle("VT80")
+
+ggsave("Figures/VT80_allvars.png")
+
+df %>%
+  gather("Var", "Concentration", DOC:TOTN) %>%
+  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
+  filter(StationId == "VT22") %>%
+  ggplot(aes(Date, Concentration)) +
+    geom_smooth() +
+    geom_point() +
+    facet_wrap(~Var, scales = "free_y", ncol = 2)+
+    ggtitle("VT22")
+
+ggsave("Figures/VT22_allvars.png")
+
+df %>%
+  gather("Var", "Concentration", DOC:TOTN) %>%
+  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
+  filter(StationId == "VT45") %>%
+  ggplot(aes(Date, Concentration)) +
+    geom_smooth() +
+    geom_point() +
+    facet_wrap(~Var, scales = "free_y", ncol = 2)+
+    ggtitle("VT45")
+
+ggsave("Figures/VT45_allvars.png")
+
+df %>%
+  gather("Var", "Concentration", Salinitet:Slope) %>%
+  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
+  filter(StationId == "VR25") %>%
+  ggplot(aes(Date, Concentration)) +
+    geom_smooth() +
+    geom_point() +
+    facet_wrap(~Var, scales = "free_y", ncol = 2)+
+    ggtitle("VR25")
+
+ggsave("Figures/VR25_allvars.png")
+
+df %>%
+  gather("Var", "Concentration", DOC:TOTN) %>%
+  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
+  filter(StationId == "VR23") %>%
+  ggplot(aes(Date, Concentration)) +
+    geom_smooth() +
+    geom_point() +
+    facet_wrap(~Var, scales = "free_y", ncol = 2)+
+    ggtitle("VR23")
+
+ggsave("Figures/VR23_allvars.png")
+
+df %>%
+  gather("Var", "Concentration", DOC:TOTN) %>%
+  mutate(Var=factor(Var, levels = c( "Sal_FB","Temp_FB", "DOC", "KlfA", "NO3", "PO4", "NH4", "SiO2", "TOTN", "TOTP")))  %>%
+  filter(StationId == "VT76") %>%
+  ggplot(aes(Date, Concentration)) +
+    geom_smooth() +
+    geom_point() +
+    facet_wrap(~Var, scales = "free_y", ncol = 2)+
+    ggtitle("VT76")
+
+ggsave("Figures/VT76_allvars.png")
+
+
+```
+
+
+### DOC timeser with COVID shutdown of Trollfjord
 ```{r}
 df %>%
   ggplot(aes(Date, DOC)) + 
@@ -298,7 +573,7 @@ df %>%
 ggsave ("Figures/DOC_FBstations_COVID.png", width = 8, height = 6, dpi=500)
 ```
 
-### e. Monthly climatologies
+### Monthly climatologies
 ```{r}
 str(df)
 df_m <- df %>%
@@ -324,16 +599,16 @@ ggsave ("Figures/NH4_FBstations_monthly.png", width = 8, height = 6, dpi=500)
 ```
 
 
-### f. Property-property plots
+### Property-property plots
 ```{r}
 
 range (df$Date)
 
 # DOC vs salt
 df %>%
-  ggplot(aes(Sal_FB, DOC)) + 
+  ggplot(aes(Salinitet, DOC)) + 
     geom_point() +
-    facet_wrap(~StationCode, ncol=5)
+    facet_wrap(~StationId, ncol=5)
 
 ggsave("Figures/DOCvsSal.png")
 
@@ -356,15 +631,15 @@ str (df)
 
 ## vs more variables, for one station at a time
 # rename variables for facet labels
-new_labels <- c("Sal_FB" = "Salinitet", "KlfA" =  "Chl a (ug/l)", "NH4" =  "NH4 (ug/l)")
+new_labels <- c("a_443" = "cDOM", "KlfA" =  "Chl a (ug/l)", "NH4" =  "NH4 (ug/l)")
 
 #"VT4"  "VT12" "VT72" "VT23" "VT45" "VT22" "VT80" "VR25" "VR23" "VT76"
 
 df %>%
-  filter(StationCode == "VT12") %>%
-  gather(key = "var", value = "value", Sal_FB, KlfA, NH4) %>%
-  mutate(var=factor(var, levels = c("Sal_FB", "NH4", "KlfA")))  %>%
-  ggplot(aes(x = value, y = DOC)) + 
+  filter(StationId == "VT12") %>%
+  gather(key = "var", value = "value", a_443, KlfA, NH4) %>%
+  mutate(var=factor(var, levels = c("a_443", "NH4", "KlfA")))  %>%
+  ggplot(aes(x = value, y = a_443)) + 
     #ylim (0,3.8) +
     geom_point() +
       facet_wrap(~ var, scales = "free", labeller = labeller(var = new_labels), ncol = 1) +
@@ -455,4 +730,3 @@ gg_VT3_vs_depth
 ggsave("Figurer/Skagerrak_VT3_vs_alldepth.png", plot = gg_VT3_vs_depth)
 
 ```
-test
