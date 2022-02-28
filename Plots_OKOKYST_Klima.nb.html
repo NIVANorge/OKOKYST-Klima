@@ -1757,27 +1757,20 @@ summary {
 <h2>0. Libraries</h2>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBSQ29sb3JCcmV3ZXI6OmRpc3BsYXkuYnJld2VyLmFsbCgpXG5pbnN0YWxsLnBhY2thZ2VzKFwiY29sb3JSYW1wc1wiKVxuXG5gYGAifQ== -->
-<pre class="r"><code># RColorBrewer::display.brewer.all()
-install.packages(&quot;colorRamps&quot;)
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShkcGx5cilcbmxpYnJhcnkocHVycnIpXG5saWJyYXJ5KGdncGxvdDIpXG5saWJyYXJ5KGx1YnJpZGF0ZSlcbmxpYnJhcnkocmVhZHhsKVxubGlicmFyeSh0aWR5cilcbmxpYnJhcnkoUkNvbG9yQnJld2VyKVxubGlicmFyeShjb2xvclJhbXBzKVxubGlicmFyeShwYXRjaHdvcmspICMgZm9yIGFycmFuZ2luZyBwbG90cyBpbiBwYW5lbHNcbiMgUkNvbG9yQnJld2VyOjpkaXNwbGF5LmJyZXdlci5hbGwoKVxuI2luc3RhbGwucGFja2FnZXMoXCJjb2xvclJhbXBzXCIpXG5cbmBgYCJ9 -->
+<pre class="r"><code>library(dplyr)
+library(purrr)
+library(ggplot2)
+library(lubridate)
+library(readxl)
+library(tidyr)
+library(RColorBrewer)
+library(colorRamps)
+library(patchwork) # for arranging plots in panels
+# RColorBrewer::display.brewer.all()
+#install.packages(&quot;colorRamps&quot;)
 </code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiV0FSTklORzogUnRvb2xzIGlzIHJlcXVpcmVkIHRvIGJ1aWxkIFIgcGFja2FnZXMgYnV0IGlzIG5vdCBjdXJyZW50bHkgaW5zdGFsbGVkLiBQbGVhc2UgZG93bmxvYWQgYW5kIGluc3RhbGwgdGhlIGFwcHJvcHJpYXRlIHZlcnNpb24gb2YgUnRvb2xzIGJlZm9yZSBwcm9jZWVkaW5nOlxuXG5odHRwczovL2NyYW4ucnN0dWRpby5jb20vYmluL3dpbmRvd3MvUnRvb2xzL1xuSW5zdGFsbGluZyBwYWNrYWdlIGludG8g46S847ixQzovVXNlcnMvVEhIL1Ivd2luLWxpYnJhcnnjpLzjuLJcbihhcyDjpLzjuLFsaWLjpLzjuLIgaXMgdW5zcGVjaWZpZWQpXG50cnlpbmcgVVJMICdodHRwczovL2NyYW4ucnN0dWRpby5jb20vYmluL3dpbmRvd3MvY29udHJpYi8zLjYvY29sb3JSYW1wc18yLjMuemlwJ1xuQ29udGVudCB0eXBlICdhcHBsaWNhdGlvbi96aXAnIGxlbmd0aCAyOTY5NSBieXRlcyAoMjggS0IpXG5kb3dubG9hZGVkIDI4IEtCXG4ifQ== -->
-<pre><code>WARNING: Rtools is required to build R packages but is not currently installed. Please download and install the appropriate version of Rtools before proceeding:
-
-https://cran.rstudio.com/bin/windows/Rtools/
-Installing package into 㤼㸱C:/Users/THH/R/win-library㤼㸲
-(as 㤼㸱lib㤼㸲 is unspecified)
-trying URL &#39;https://cran.rstudio.com/bin/windows/contrib/3.6/colorRamps_2.3.zip&#39;
-Content type &#39;application/zip&#39; length 29695 bytes (28 KB)
-downloaded 28 KB</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDigJhjb2xvclJhbXBz4oCZIHN1Y2Nlc3NmdWxseSB1bnBhY2tlZCBhbmQgTUQ1IHN1bXMgY2hlY2tlZFxuXG5UaGUgZG93bmxvYWRlZCBiaW5hcnkgcGFja2FnZXMgYXJlIGluXG5cdEM6XFxVc2Vyc1xcVEhIXFxBcHBEYXRhXFxMb2NhbFxcVGVtcFxcUnRtcFdXbnU3aVxcZG93bmxvYWRlZF9wYWNrYWdlc1xuIn0= -->
-<pre><code>package ‘colorRamps’ successfully unpacked and MD5 sums checked
-
-The downloaded binary packages are in
-    C:\Users\THH\AppData\Local\Temp\RtmpWWnu7i\downloaded_packages</code></pre>
-<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 </div>
@@ -1790,6 +1783,35 @@ The downloaded binary packages are in
 </ul>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG5kaXIoXCJEYXRhc2V0dFwiKVxuXG5kZiA8LSByZWFkLmRlbGltIChcIkRhdGFzZXR0L09LT0tZU1RfS2xpbWFfY2xlYW5lZC50eHRcIilcbmRmMiA8LSByZWFkLmRlbGltIChcIkRhdGFzZXR0L09LT0tZU1RfS2xpbWFfY2xlYW5lZF9tZXJnZWQudHh0XCIpXG5cbiN1bml0c1xuI0RPQ1x0Rmx1b3Jlc2NlbnNcdEtsZkFcdE5INC1OXHROaXRyb2dlbiBwYXJ0XHROTzMrTk8yLU5cdE8yXHRPMlx0TzIgKG1ldG5pbmcpXHRQTzQtUFx0UE9DXHRQLVBPNFx0U2FsaW5pdGV0XHRTR1IgLSBTdXNwZW5kZXJ0IGdsw7hkZXJlc3RcdFNpa3RkeXBcdFNpTzJcdFNUU1x0VGVtcGVyYXR1clx0VGV0dGhldHNhbm9tYWxpXHRUT1ROXHRUT1RQXHRUT1RQX1BcdFRTTVx0VHVyYmlkaXRldFxuI21nL0wgQ1x0wrVnL2xcdMK1Zy9sXHTCtWcvbFx0wrVnL2wgTlx0wrVnL2xcdG1nL0xcdG1sL2xcdCVcdMK1Zy9sXHTCtWcvbCBDXHTCtWcvbCBQXHRcdG1nL2xcdG1cdG1nL2xcdG1nL2xcdENcdGtnL20zXHTCtWcvbFx0wrVnL2xcdMK1Zy9sIFBcdG1nL2xcdEZOVVxuXG5kZjwtZGYyICMgdXNlIGZvciBhbGwgcGFyYW1ldGVyc1xuIyBjb252ZXJ0IGJhY2sgdG8gRGF0ZVxuZGYkRGF0ZSA8LSBhcy5EYXRlKGRmJERhdGUpXG5cbiNzdHIoZGYpXG5cbiMgc3RhdGlvbiBuYW1pbmdcbmRmJFN0YXRpb25JZCA8LSBhcy5mYWN0b3IgKGRmJFN0YXRpb25JZClcbiNvcmRlciBzdGF0aW9ucyBmcm9tIGFsb25nIGNvYXN0bGluZSBmb3IgZ2dwbG90XG5cbmRmJFN0YXRpb25JZCA8LSBmYWN0b3IoZGYkU3RhdGlvbklkLCBsZXZlbHMgPSBjKFwiVlQzXCIsIFwiVlQxNlwiLCBcIlZUNzFcIiwgXCJWUjU0XCIsIFwiVlI1OFwiLCBcIlZSMjFcIikpXG5cbiMjIEFkZCBtb250aHMgYXMgbnIgYW5kIG5hbWVzXG5kZjwtIGRmICAlPiUgbXV0YXRlKE1vbnRoPURhdGUsIE1vbnRoX3R4dD1EYXRlKVxuZGYkTW9udGg8LSBzdHJmdGltZShkZiRNb250aCxcIiVtXCIpXG5kZiRNb250aF90eHQ8LSBzdHJmdGltZShkZiRNb250aF90eHQsXCIlQlwiKVxuXG5cblxuYGBgIn0= -->
+<pre class="r"><code>
+dir(&quot;Datasett&quot;)
+
+df &lt;- read.delim (&quot;Datasett/OKOKYST_Klima_cleaned.txt&quot;)
+df2 &lt;- read.delim (&quot;Datasett/OKOKYST_Klima_cleaned_merged.txt&quot;)
+
+#units
+#DOC    Fluorescens KlfA    NH4-N   Nitrogen part   NO3+NO2-N   O2  O2  O2 (metning)    PO4-P   POC P-PO4   Salinitet   SGR - Suspendert gløderest  Siktdyp SiO2    STS Temperatur  Tetthetsanomali TOTN    TOTP    TOTP_P  TSM Turbiditet
+#mg/L C µg/l    µg/l    µg/l    µg/l N  µg/l    mg/L    ml/l    %   µg/l    µg/l C  µg/l P      mg/l    m   mg/l    mg/l    C   kg/m3   µg/l    µg/l    µg/l P  mg/l    FNU
+
+df&lt;-df2 # use for all parameters
+# convert back to Date
+df$Date &lt;- as.Date(df$Date)
+
+#str(df)
+
+# station naming
+df$StationId &lt;- as.factor (df$StationId)
+#order stations from along coastline for ggplot
+
+df$StationId &lt;- factor(df$StationId, levels = c(&quot;VT3&quot;, &quot;VT16&quot;, &quot;VT71&quot;, &quot;VR54&quot;, &quot;VR58&quot;, &quot;VR21&quot;))
+
+## Add months as nr and names
+df&lt;- df  %&gt;% mutate(Month=Date, Month_txt=Date)
+df$Month&lt;- strftime(df$Month,&quot;%m&quot;)
+df$Month_txt&lt;- strftime(df$Month_txt,&quot;%B&quot;)
+</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 </div>
@@ -1820,9 +1842,79 @@ str (df)</code></pre>
 <h3>2.1.1 VR21</h3>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-plot-begin eyJjb25kaXRpb25zIjpbXSwiaGVpZ2h0Ijo0MzIuNjMyOSwic2l6ZV9iZWhhdmlvciI6MCwid2lkdGgiOjcwMH0= -->
-<p><img src="data:image/png;base64,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" /></p>
-<!-- rnb-plot-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2NvbG91cnMgZm9yIGRlcHRoXG5yYWluYm93KDUpXG5teWNvbHMgPC0gY29sb3JzKClbYyhcIiNGRjAwMDBGRlwiLCBcIiNDQ0ZGMDBGRlwiLCBcIiMwMEZGNjZGRlwiLCBcIiMwMDY2RkZGRlwiICwgXCIjQ0MwMEZGRkZcIiApXVxuI3N0YXRpb24gVlQyMVxuVlQyMTwtIGRmICU+JVxuICBmaWx0ZXIoU3RhdGlvbklkPT1cIlZSMjFcIikgXG5cbiMgRE9DIHZzIGNET01cbmRmX3NlbCA8LVZUMjEgJT4lXG4gIGZpbHRlcihET0MgPiAwICYgYV80NDMgPiAwKSU+JVxuICAgZmlsdGVyKFN0YXRpb25JZD09XCJWUjIxXCIpXG5kZl9zZWwkRGVwdGgxPC0gYXMuZmFjdG9yKGRmX3NlbCREZXB0aDEpXG4gICMgIGZpbHRlcihET0MgPCAzKSAlPiVcbiNwbG90XG5ET0NfY2RvbV9wbG90IDwtICAgXG4gIGdncGxvdChkZl9zZWwsYWVzKERPQywgYV80NDMsIGNvbG91cj1EZXB0aDEpKSArIFxuICAgIGdlb21fcG9pbnQoKSArXG4gICAgdGhlbWVfYncoKSsgIGxhYnModGl0bGUgPSBcIlZSMjFcIiwgeCA9IGV4cHJlc3Npb24ocGFzdGUoXCJET0MgbWcgXCIsIExeey0xfSkpLCB5PSBleHByZXNzaW9uKHBhc3RlKFwiY0RPTSBhYnNvcnB0aW9uLCAgXCIsIG1eey0xfSkpKSArXG4jICAgIHNjYWxlX2NvbG91cl9ncmFkaWVudG4oY29sb3Vycz1yYWluYm93KDUpLCAgbmFtZSA9IFwiRGVwdGgsIG1cIikrXG4gIyAgc2NhbGVfc2l6ZV9jb250aW5pb3VzKGRyb3A9RkFMU0UpK1xuIHNjYWxlX2NvbG91cl9tYW51YWwoYnJlYWtzID0gYygwLCA1LCAxMCwgMjAsIDMwKSxsYWJlbHMgPSBwYXN0ZShjKDAsIDUsIDEwLCAyMCwzMCkpLHZhbHVlcz1jKFwiI0ZGMDAwMEZGXCIsIFwiI0NDRkYwMEZGXCIsIFwiIzAwRkY2NkZGXCIsIFwiIzAwNjZGRkZGXCIgLCBcIiNDQzAwRkZGRlwiICksXG4gICAgIGd1aWRlID0gZ3VpZGVfbGVnZW5kKHRpdGxlID0gXCJEZXB0aCwgbVwiKSkrXG4gIGdlb21fc21vb3RoKCBtZXRob2QgPSBsbSwgc2UgPSBGQUxTRSwgY29sPVwiYmxhY2tcIilcbiAgXG4jdXBkYXRlX2xhYmVscyhET0NfY2RvbV9wbG90LCBsaXN0KGNvbG91cj1cIkRlcHRoLCBtXCIpKVxuXG5ET0NfY2RvbV9wbG90ICNhY3RpdmF0ZSB0byBjaGVjayBwbG90XG5cbiAjIERPQyB2cyBLbGEuLi4uXG5kZiAlPiVcbiAgZmlsdGVyKFN0YXRpb25JZD09XCJWUjIxXCIpICU+JVxuICBmaWx0ZXIoRE9DID4gMCAmIGFfNDQzID4gMCklPiVcbiAgZ2dwbG90KGFlcyhET0MsIGFfNDQzKSkgKyBcbiAgICBnZW9tX3BvaW50KCkgK1xuICBsYWJzKHRpdGxlID0gXCJWUjIxXCIsIHggPSBleHByZXNzaW9uKHBhc3RlKFwiRE9DIG1nLCBcIiwgTF57LTF9KSksIHk9IGV4cHJlc3Npb24ocGFzdGUoXCJjRE9NIGFic29ycHRpb24sICBcIiwgbV57LTF9KSkpKyBcblxuXG5cbiAgICBmYWNldF93cmFwKHZhcnMoRGVwdGgxKSlcblxuZ2dzYXZlIChcIkZpZ3VyZXMvRE9DX2Nkb21fVlIyMS5wbmdcIiwgd2lkdGggPSA4LCBoZWlnaHQgPSA2LCBkcGk9NTAwKVxuXG4gICAgICAgICBcbiAgbW9kMTwtICBsbShET0N+YV80NDMsIGRmKVxuc3VtbWFyeShtb2QxKVxuXG5cblxuZGYgJT4lXG4gIGZpbHRlcihTdGF0aW9uSWQ9PVwiVlI1NFwiKSAlPiVcbiAgZmlsdGVyKERPQyA+IDAgJiBhXzQ0MyA+IDApJT4lXG4gICAjIGZpbHRlcihET0MgPCAzKSAlPiVcbiAgZ2dwbG90KGFlcyhET0MsIGFfNDQzKSkgKyBcbiAgICBnZW9tX3BvaW50KCkgK1xuICAgIGdlb21fc21vb3RoKG1ldGhvZCA9IGxtLCBzZSA9IEZBTFNFKSsgXG4gICAgZmFjZXRfd3JhcCh+RGVwdGgxKVxuXG5nZ3NhdmUgKFwiRmlndXJlcy9ET0NfY2RvbV9WUjIxLnBuZ1wiLCB3aWR0aCA9IDgsIGhlaWdodCA9IDYsIGRwaT01MDApXG5cbiMgY2RvbSB2cyBzYWx0XG5kZiAlPiVcbiAgZ2dwbG90KGFlcyhTYWxpbml0ZXQsIGFfNDQzKSkgKyBcbiAgICBnZW9tX3BvaW50KCkgK1xuICAgIGZhY2V0X3dyYXAoflN0YXRpb25JZCwgbmNvbD0yKVxuXG4jIERPQyB2cyBzYWx0XG5kZiAlPiVcbiAgZ2dwbG90KGFlcyhTYWxpbml0ZXQsIERPQykpICsgXG4gICAgZ2VvbV9wb2ludCgpICtcbiAgICBmYWNldF93cmFwKH5TdGF0aW9uSWQsIG5jb2w9MilcbiNUbyBzYXZlIGVhY2ggcGxvdFxuI2dnc2F2ZSAoXCJGaWd1cmVzL0RPQ19jZG9tXy5wbmdcIiwgd2lkdGggPSA4LCBoZWlnaHQgPSA2LCBkcGk9NTAwKVxuXG5cbmBgYCJ9 -->
+<pre class="r"><code>#colours for depth
+rainbow(5)
+mycols &lt;- colors()[c(&quot;#FF0000FF&quot;, &quot;#CCFF00FF&quot;, &quot;#00FF66FF&quot;, &quot;#0066FFFF&quot; , &quot;#CC00FFFF&quot; )]
+#station VT21
+VT21&lt;- df %&gt;%
+  filter(StationId==&quot;VR21&quot;) 
+
+# DOC vs cDOM
+df_sel &lt;-VT21 %&gt;%
+  filter(DOC &gt; 0 &amp; a_443 &gt; 0)%&gt;%
+   filter(StationId==&quot;VR21&quot;)
+df_sel$Depth1&lt;- as.factor(df_sel$Depth1)
+  #  filter(DOC &lt; 3) %&gt;%
+#plot
+DOC_cdom_plot &lt;-   
+  ggplot(df_sel,aes(DOC, a_443, colour=Depth1)) + 
+    geom_point() +
+    theme_bw()+  labs(title = &quot;VR21&quot;, x = expression(paste(&quot;DOC mg &quot;, L^{-1})), y= expression(paste(&quot;cDOM absorption,  &quot;, m^{-1}))) +
+#    scale_colour_gradientn(colours=rainbow(5),  name = &quot;Depth, m&quot;)+
+ #  scale_size_continious(drop=FALSE)+
+ scale_colour_manual(breaks = c(0, 5, 10, 20, 30),labels = paste(c(0, 5, 10, 20,30)),values=c(&quot;#FF0000FF&quot;, &quot;#CCFF00FF&quot;, &quot;#00FF66FF&quot;, &quot;#0066FFFF&quot; , &quot;#CC00FFFF&quot; ),
+     guide = guide_legend(title = &quot;Depth, m&quot;))+
+  geom_smooth( method = lm, se = FALSE, col=&quot;black&quot;)
+  
+#update_labels(DOC_cdom_plot, list(colour=&quot;Depth, m&quot;))
+
+DOC_cdom_plot #activate to check plot
+
+ # DOC vs Kla....
+df %&gt;%
+  filter(StationId==&quot;VR21&quot;) %&gt;%
+  filter(DOC &gt; 0 &amp; a_443 &gt; 0)%&gt;%
+  ggplot(aes(DOC, a_443)) + 
+    geom_point() +
+  labs(title = &quot;VR21&quot;, x = expression(paste(&quot;DOC mg, &quot;, L^{-1})), y= expression(paste(&quot;cDOM absorption,  &quot;, m^{-1})))+ 
+
+    facet_wrap(vars(Depth1))
+
+ggsave (&quot;Figures/DOC_cdom_VR21.png&quot;, width = 8, height = 6, dpi=500)
+
+         
+  mod1&lt;-  lm(DOC~a_443, df)
+summary(mod1)
+
+
+
+df %&gt;%
+  filter(StationId==&quot;VR54&quot;) %&gt;%
+  filter(DOC &gt; 0 &amp; a_443 &gt; 0)%&gt;%
+   # filter(DOC &lt; 3) %&gt;%
+  ggplot(aes(DOC, a_443)) + 
+    geom_point() +
+    geom_smooth(method = lm, se = FALSE)+ 
+    facet_wrap(~Depth1)
+
+ggsave (&quot;Figures/DOC_cdom_VR21.png&quot;, width = 8, height = 6, dpi=500)
+
+# cdom vs salt
+df %&gt;%
+  ggplot(aes(Salinitet, a_443)) + 
+    geom_point() +
+    facet_wrap(~StationId, ncol=2)
+
+# DOC vs salt
+df %&gt;%
+  ggplot(aes(Salinitet, DOC)) + 
+    geom_point() +
+    facet_wrap(~StationId, ncol=2)
+#To save each plot
+#ggsave (&quot;Figures/DOC_cdom_.png&quot;, width = 8, height = 6, dpi=500)
+</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 </div>
