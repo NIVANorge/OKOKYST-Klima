@@ -28,6 +28,9 @@ library(patchwork) # for arranging plots in panels
 * this file is produced in script "Read_and_check_OKOKYST_Klima.Rmd"
 ```{r}
 
+# clear workspace
+#rm(list = ls())
+
 dir("Datasett")
 
 df <- read.delim ("Datasett/OKOKYST_Klima_cleaned.txt")
@@ -45,8 +48,9 @@ df$Date <- as.Date(df$Date)
 
 # station naming
 df$StationId <- as.factor (df$StationId)
-#order stations from along coastline for ggplot
 
+
+#order stations from along coastline for ggplot
 df$StationId <- factor(df$StationId, levels = c("VT3", "VT16", "VT71", "VR54", "VR58", "VR21"))
 
 ## Add months as nr and names
@@ -178,75 +182,51 @@ ggsave ("Figures/DOC_cdom_.png", width = 8, height = 6, dpi=500)
 
 ### Timeseries pr station
 ```{r}
-str(df)
-
-#DOC timeser with COVID shutdown of Trollfjord
-df %>%
-  ggplot(aes(Date, DOC)) + 
-    geom_point() + geom_smooth() +
-      labs(title = "", x = "", y = "DOC (mg/L)") +
-      geom_vline(xintercept = as.numeric(ymd("2020-03-14")), linetype="dashed", 
-                color = "red", size=1) +
-        scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y")+
-        theme(axis.text.x=element_text(angle=60, hjust=1))
-
-#ggsave ("Figures/OKOKYST_Klima/DOC_allstations.png", width = 8, height = 6, dpi=500)
-
-df %>%
-  filter(StationCode == "VT3" | StationCode == "VT71" | StationCode == "VR54") %>%
-  ggplot(aes(Date, DOC)) + 
-    geom_point() + geom_smooth() +
-      labs(title = "", x = "", y = "DOC (mg/L)") +
-      geom_vline(xintercept = as.numeric(ymd("2020-03-14")), linetype="dashed", 
-                color = "red", size=1) +
-        scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y")+
-        theme(axis.text.x=element_text(angle=60, hjust=1))
-
-ggsave ("Figures/OKOKYST_Klima/DOC_allstations.png", width = 8, height = 6, dpi=500)
+#str(df)
 
 df %>%
   ggplot(aes(Date, DOC)) + 
-    geom_point() + geom_smooth() +
+    geom_point() +
     facet_wrap(~StationId, ncol=2) +
       labs(title = "", x = "", y = "DOC (mg/L)") +
         scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y")+
         theme(axis.text.x=element_text(angle=60, hjust=1))
 
-ggsave ("Figures/OKOKYST_Klima/DOC_pr_station.png", width = 8, height = 6, dpi=500)
+ggsave ("Figures/DOC_pr_station.png", width = 8, height = 6, dpi=500)
 
 df %>%
   ggplot(aes(Date, TSM)) + 
-    geom_point() + geom_smooth() +
+    geom_point() +
     facet_wrap(~StationId, ncol=2) +
       labs(title = "", x = "", y = "TSM (mg/L)") +
         scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y")+
         theme(axis.text.x=element_text(angle=60, hjust=1))
 
-ggsave ("Figures/OKOKYST_Klima/TSM_pr_station.png", width = 8, height = 6, dpi=500)
+ggsave ("Figures/TSM_pr_station.png", width = 8, height = 6, dpi=500)
 
 df %>%
   ggplot(aes(Date, POC)) + 
-    geom_point() + geom_smooth() +
+    geom_point() +
     facet_wrap(~StationId, ncol=2) +
       labs(title = "", x = "", y = "POC ") +
         scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y")+
         theme(axis.text.x=element_text(angle=60, hjust=1))
 
-ggsave ("Figures/OKOKYST_Klima/POC_pr_station.png", width = 8, height = 6, dpi=500)
+ggsave ("Figures/POC_pr_station.png", width = 8, height = 6, dpi=500)
 
 df %>%
   ggplot(aes(Date, PN)) + 
-    geom_point() + geom_smooth() +
+    geom_point() +
     facet_wrap(~StationId, ncol=2) +
       labs(title = "", x = "", y = "Part N") +
         scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y")+
         theme(axis.text.x=element_text(angle=60, hjust=1))
 
-ggsave ("Figures/OKOKYST_Klima/PN_pr_station.png", width = 8, height = 6, dpi=500)
+ggsave ("Figures/PN_pr_station.png", width = 8, height = 6, dpi=500)
 
 df %>%
   ggplot(aes(Date, PP)) + 
-    geom_point() + geom_smooth() +
+    geom_point() +
     facet_wrap(~StationId, ncol=2) +
       labs(title = "", x = "", y = "Part P ") +
         scale_x_date(date_breaks = "4 month", date_labels =  "%m-%y")+
@@ -445,9 +425,8 @@ ggsave ("Figures/cDOM_pr_station.png", width = 8, height = 6, dpi=500)
 
 
 ### Plots pr FB station
-
 ```{r}
-#str(df)
+str(df)
 #levels (df$StationCode)
 #"VT4"  "VT12" "VT72" "VT23" "VT45" "VT22" "VT80" "VR25" "VR23" "VT76"
 # for OKOKYST; "VT3"  "VT16" "VT71" "VR54" "VR58" "VR21" 
@@ -577,6 +556,7 @@ ggsave("Figures/VT76_allvars.png")
 
 
 ```
+
 
 ### DOC timeser with COVID shutdown of Trollfjord
 ```{r}
@@ -750,4 +730,3 @@ gg_VT3_vs_depth
 ggsave("Figurer/Skagerrak_VT3_vs_alldepth.png", plot = gg_VT3_vs_depth)
 
 ```
-test

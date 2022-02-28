@@ -1,0 +1,727 @@
+---
+title: "03. Plotting_discrete_stations"
+author: "Helene"
+date: "14 april 2021"
+output: github_document:
+    toc: true
+  html_document:
+    toc: true    
+    toc_float: true
+    code_folding: hide
+knit: (function(inputFile, encoding) {
+  rmarkdown::render(inputFile, encoding = encoding, output_format = "all", output_dir = "../Produced_documents") })
+
+---
+
+* NB uses datsets for Vt3, VR54 and VR24 that is made in Vaarflom_check_data_aquamonitor. Datasets are averaged for discrete depths between 0-30 m (ie. df1_m etc).
+
+## 0. Libraries
+```{r, error = F, warning = F}
+
+# clean workspace
+#rm(list=ls())
+
+library (caTools)
+library (lubridate)
+library (dplyr)
+#install.packages ("vctrs")
+#install.packages ("ellipsis")
+library (vctrs)
+library (ellipsis)
+library(tidyr)     # 
+library(purrr)     # for map_dbl
+#install.packages ("rMR")
+library (rMR) # calculate O2 saturation
+library (seacarb)
+library(akima)
+library(ggplot2)
+library(readxl)
+library(mgcv)     # for gam() in plots
+library(patchwork) # for arranging plots in panels
+
+# specific functions needed for the contour plots
+
+# Functions (okokyst_plot and others)
+#source("12_Plotting_discrete_stations_functions.R") # old version from 2020
+
+# NB! this R script file contains the function (that is called in this script), and needs to be saved in the same folder
+source("okokyst_plot_functions.R")# new version in 2021
+
+# Use a self-defined color scale  
+jet.colors <- colorRampPalette(c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F", 
+                                 "yellow", "#FF7F00", "red", "#7F0000"))
+
+```
+
+
+## 1. Read and clean files
+### a. read
+* this file is produced in script "Read_and_check_OKOKYST_Klima.Rmd"
+```{r}
+
+# clear workspace
+#rm(list = ls())
+#dir("Datasett")
+
+df <- read.delim ("Datasett/OKOKYST_Klima_cleaned_merged.txt")
+
+str(df)
+
+# convert back to Date
+df$Date <- as.Date(df$Date)
+#str(df)
+
+# station naming
+df$StationId <- as.factor (df$StationId)
+#order stations along coastline for ggplot
+df$StationId <- factor(df$StationId, levels = c("VT3", "VT16", "VT71", "VR54", "VR58", "VR21"))
+
+
+
+```
+
+### 1. Clean data for contour plots, summarizing for depths
+```{r}
+
+str (df)
+# For water chemistry variables with discrete depths (0-30m)  
+df_chem <- df %>%
+  select(-c(Depth2:Turbiditet, O2_mg, O2_ml))  %>%
+   filter (Depth1 == 0.0 | Depth1 == 5.0 | Depth1 == 10.0 | Depth1 == 20.0 | Depth1 == 30.0) %>%
+   rename (Depth = Depth1)
+
+#str(df_chem)
+
+df_chem_m <- df_chem %>%
+group_by(StationId, Date, Depth) %>%
+  summarize_at(vars(DOC:TSM), mean, na.rm = TRUE) %>%
+    ungroup ()
+
+# (df_chem_m)
+
+# make df for each station (needed for okokyst_plot function)
+
+#include only data from 2017 to 2021 (or just 2020?)
+#range (df$Date)
+#df <- subset(df, Date >= "2017-01-01" &  Date <= "2021-12-31")
+
+VT16 <- df_chem_m %>%
+  filter(StationId == "VT16") %>%
+  filter (Date >= "2021-06-01" &  Date <= "2021-11-30" )
+
+VT71 <- df_chem_m %>%
+  filter(StationId == "VT71")
+
+VR54 <- df_chem_m %>%
+  filter(StationId == "VR54")
+
+VR58 <- df_chem_m %>%
+  filter(StationId == "VR58") %>%
+  filter (Date >= "2021-06-01" &  Date <= "2021-11-30" )
+
+VR21 <- df_chem_m %>%
+  filter(StationId == "VR21") %>%
+  filter (Date >= "2021-06-01" &  Date <= "2021-11-30" )
+
+```
+
+### 3. Contour plots
+
+### o. example from Dag 13.04.2021 - just for testing
+```{r}
+## Using okokyst_plot() function ---- 
+#str(df2)
+
+# Basic plot
+# debugonce(okokyst_plot)
+okokyst_plot(VR54, "DOC")
+
+# Don't show the coloured points (can instead use 'colored_points_size' to adjust size)
+okokyst_plot(df2, "KlfA", colored_points = FALSE)
+
+# If you want to remove part of the background colors, then
+# (1) first use okokyst_make_plotdata()  (here, we call the result 'my_plotdata')
+# (2) select the part of the data and store the result (here, called 'sel')
+# (3) set the variable 'z' in the dataset from 1 ('my_plotdata') to be NA for all selected rows ('sel')
+# (4) use okokyst_plot() as before, but set plotdata = the name of the dataset from 1 (here, 'my_plotdata') 
+# Example:
+my_plotdata <- okokyst_make_plotdata(df2, "KlfA")  
+sel <- with(my_plotdata, Time >= dmy("01.05.2020") & Time <= dmy("31.05.2020") & Depth < 15)
+my_plotdata$z[sel] <- NA
+okokyst_plot(df2, "KlfA", plotdata = my_plotdata)
+
+# Try GAM (doesn't work well in this case)
+okokyst_plot(df1_discrete, "KlfA", gam = TRUE, gam_k = 5)
+
+# Try a different palette (you can set palette = 'A', 'B', 'C' or 'D' - the default is D)
+okokyst_plot(df1_discrete, "KlfA", palette = "C")
+
+# Turn colors "upside down" (setting colored_points_rim = TRUE to see points in all parts)
+okokyst_plot(df1_discrete, "KlfA", palette = "A", 
+             reverse_colors = TRUE, colored_points_rim = TRUE)
+
+okokyst_plot(df2, "KlfA") +
+  scale_fill_gradientn(colours = jet.colors(16))
+
+```
+
+
+
+
+### a. VR21 (will make panels for all climate vars pr station)
+
+#### DOC
+```{r}
+
+quantile (VR21$DOC, na.rm = T)
+
+# med punkter - uten x akse (til panels)
+VR21_DOC <- okokyst_plot(data = VR21, varname = "DOC", ctd_variable = FALSE,
+                   colored_points = TRUE, gam = T, gam_k = 5, limits = c(0, 1.9), binwidth = 0.2, max_timediff = 30, ylabel = F, xlabel = F) +
+                    scale_fill_gradientn("DOC", colours = jet.colors(16)) +
+                    scale_x_datetime(date_breaks = "1 month", labels =  NULL)
+VR21_DOC
+
+ggsave ("Figures/VR21_DOC.png", dpi=500)
+```
+
+#### cDOM (do not have yet...)
+```{r}
+
+quantile (VR21$cDOM, na.rm = T)
+
+# med punkter - uten x akse (til panels)
+VR21_DOC <- okokyst_plot(data = VR21, varname = "DOC", ctd_variable = FALSE,
+                   colored_points = TRUE, gam = T, gam_k = 5, limits = c(0, 1.9), binwidth = 0.2, max_timediff = 30, ylabel = F, xlabel = F) +
+                    scale_fill_gradientn("DOC", colours = jet.colors(16)) +
+                    scale_x_datetime(date_breaks = "1 month", labels =  NULL)
+VR21_DOC
+
+ggsave ("Figures/VR21_cDOM.png", dpi=500)
+```
+
+#### TSM
+```{r}
+
+quantile (VR21$TSM, na.rm = T)
+
+# med punkter - uten x akse (til panels)
+VR21_TSM <- okokyst_plot(data = VR21, varname = "TSM", ctd_variable = FALSE,
+                   colored_points = TRUE, gam = T, gam_k = 5, limits = c(0, 1.2), binwidth = 0.2, max_timediff = 30, ylabel = F, xlabel = F) +
+                    scale_fill_gradientn("TSM", colours = jet.colors(16)) +
+                    scale_x_datetime(date_breaks = "1 month", date_labels =  "%b %y") +
+                    theme(axis.text.x=element_text(angle=60, hjust=1), plot.title = element_text(hjust = 0.5))
+VR21_TSM
+
+ggsave ("Figures/VR21_TSM.png", dpi=500)
+```
+
+#### POC
+```{r}
+
+quantile (VR21$POC, na.rm = T)
+
+# med punkter - uten x akse (til panels)
+VR21_POC <- okokyst_plot(data = VR21, varname = "POC", ctd_variable = FALSE,
+                   colored_points = TRUE, gam = T, gam_k = 4, limits = c(0, 280), binwidth = 50, max_timediff = 30, ylabel = F, xlabel = F) +
+                    scale_fill_gradientn("POC", colours = jet.colors(16)) +
+                    scale_x_datetime(date_breaks = "1 month", labels =  NULL)
+VR21_POC
+
+ggsave ("Figures/VR21_POC.png", dpi=500)
+```
+
+#### PN - sjekk verdier...
+```{r}
+
+quantile (VR21$PN, na.rm = T)
+
+# med punkter - uten x akse (til panels)
+VR21_PN <- okokyst_plot(data = VR21, varname = "PN", ctd_variable = FALSE,
+                   colored_points = TRUE, gam = T, gam_k = 4, limits = c(0, 43), binwidth = 5, max_timediff = 1, ylabel = F, xlabel = F) +
+                    scale_fill_gradientn("PN", colours = jet.colors(16)) +
+                    scale_x_datetime(date_breaks = "1 month", labels =  NULL)
+VR21_PN
+
+ggsave ("Figures/VR21_PN.png", dpi=500)
+```
+
+#### PP
+```{r}
+
+quantile (VR21$PP, na.rm = T)
+
+# med punkter - uten x akse (til panels)
+VR21_PP <- okokyst_plot(data = VR21, varname = "PP", ctd_variable = FALSE,
+                   colored_points = TRUE, gam = T, gam_k = 5, limits = c(0,9), binwidth = 1, max_timediff = 30, ylabel = F, xlabel = F) +
+                    scale_fill_gradientn("PP", colours = jet.colors(16)) + 
+                    scale_x_datetime(date_breaks = "1 month", date_labels =  "%b %y") +
+                    theme(axis.text.x=element_text(angle=60, hjust=1), plot.title = element_text(hjust = 0.5))
+VR21_PP
+
+ggsave ("Figures/VR21_PP.png", dpi=500)
+```
+
+
+### Combine figures (with patchwork library)
+```{r}
+
+# combine figures pr station 
+
+# NB!! also add cDOm in the middle of this panel
+P1 <- VR21_DOC +  VR21_TSM + plot_layout(ncol = 1)
+plot (P1)
+ggsave("Figures/VR21_panel_1.png", plot = P1)
+
+P2 <- VR21_POC + VR21_PN + VR21_PP + plot_layout(ncol = 1)
+plot (P2)
+ggsave("Figures/VR21_panel_2.png", plot = P2)
+
+```
+
+
+### VR54
+
+#### DOC
+```{r}
+
+quantile(VR54$DOC, na.rm = T)
+
+# med punkter
+VR54_DOC <- okokyst_plot(data = VR54, varname = "DOC", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0, 4.8), binwidth = 1, ylabel = F, xlabel = F) +
+                    scale_fill_gradientn("DOC", colours = jet.colors(16))  +
+                    scale_x_datetime(date_breaks = "2 month", labels =  NULL)
+VR54_DOC
+
+ggsave ("Figures/VR54_DOC.png", dpi=500)
+
+
+```
+
+####cDOM (NB! do not have yet)
+```{r}
+
+quantile(VR54$cDOM, na.rm = T)
+
+# med punkter
+VR54_cDOM <- okokyst_plot(data = VR54, varname = "cDOM", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0, 4.8), binwidth = 1, ylabel = F, xlabel = F) +
+                    scale_fill_gradientn("cDOM", colours = jet.colors(16))  +
+                    scale_x_datetime(date_breaks = "2 month", labels =  NULL)
+VR54_DOC
+
+ggsave ("Figures/VR54_cDOM.png", dpi=500)
+
+
+```
+
+#### TSM
+```{r}
+
+quantile (VR54$TSM, na.rm = T)
+
+# med punkter - med x aksen
+VR54_TSM <- okokyst_plot(data = VR54, varname = "TSM", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0,3), binwidth = 0.5, max_timediff = 25, ylabel = F, xlabel = F) +
+                    scale_fill_gradientn("TSM", colours = jet.colors(16)) +
+                     scale_x_datetime(date_breaks = "2 month", date_labels =  "%b %y") +
+                    theme(axis.text.x=element_text(angle=60, hjust=1), plot.title = element_text(hjust = 0.5))
+VR54_TSM
+
+ggsave ("Figures/VR54_TSM.png", dpi=500)
+
+```
+
+#### POC - NB sjekk verdier, kanskje bare bruke siden Juni 2021???
+```{r}
+
+quantile (VR54$POC, na.rm = T)
+
+# med punkter - uten x akse (til panels)
+VR54_POC <- okokyst_plot(data = VR54, varname = "POC", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0, 410), binwidth = 50, max_timediff = 30, ylabel = F, xlabel = F) +
+                    scale_fill_gradientn("POC", colours = jet.colors(16)) +
+                    scale_x_datetime(date_breaks = "1 month", labels =  NULL)
+VR54_POC
+
+ggsave ("Figures/VR54_POC.png", dpi=500)
+```
+
+#### PN - sjekk verdier...
+```{r}
+
+quantile (VR54$PN, na.rm = T)
+
+# med punkter - uten x akse (til panels)
+VR54_PN <- okokyst_plot(data = VR54, varname = "PN", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0, 273), binwidth = 50, max_timediff = 1, ylabel = F, xlabel = F) +
+                    scale_fill_gradientn("PN", colours = jet.colors(16)) +
+                    scale_x_datetime(date_breaks = "1 month", labels =  NULL)
+VR54_PN
+
+ggsave ("Figures/VR54_PN.png", dpi=500)
+```
+
+#### PP
+```{r}
+
+quantile (VR54$PP, na.rm = T)
+
+# med punkter - uten x akse (til panels)
+VR54_PP <- okokyst_plot(data = VR54, varname = "PP", ctd_variable = FALSE,
+                   colored_points = TRUE, gam = T, gam_k = 5, limits = c(0,26), binwidth = 5, max_timediff = 30, ylabel = F, xlabel = F) +
+                    scale_fill_gradientn("PP", colours = jet.colors(16)) + 
+                    scale_x_datetime(date_breaks = "1 month", date_labels =  "%b %y") +
+                    theme(axis.text.x=element_text(angle=60, hjust=1), plot.title = element_text(hjust = 0.5))
+VR54_PP
+
+ggsave ("Figures/VR54_PP.png", dpi=500)
+```
+
+
+### Combine figures (with patchwork library)
+```{r}
+
+# combine figures pr station 
+
+# NB!! also add cDOm in the middle of this panel
+P1 <- VR54_DOC +  VR54_TSM + plot_layout(ncol = 1)
+plot (P1)
+ggsave("Figures/VR54_panel_1.png", plot = P1)
+
+# need to change timescale - just use from Jun2021?
+P2 <- VR54_POC + VR54_PN + VR54_PP + plot_layout(ncol = 1)
+plot (P2)
+ggsave("Figures/VR21_panel_2.png", plot = P2)
+
+```
+
+
+# NOT UPDATED - DO NOT USE!
+
+#### VT71
+```{r}
+
+quantile (VT71$DOC, na.rm = T)
+
+# med punkter - uten x akse (til panels)
+VT71_DOC <- okokyst_plot(data = VT71, varname = "DOC", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0, 3.2), binwidth = 0.5, max_timediff = 25, ylabel = F, xlabel = F) +
+                    scale_fill_gradientn("DOC", colours = jet.colors(16)) +
+                    scale_x_datetime(date_breaks = "2 month", labels =  NULL)
+VT71_DOC
+
+ggsave ("Figurer/VT71_DOC.png", dpi=500)
+```
+
+
+### e. TSM
+
+#### VT71
+```{r}
+
+
+
+quantile(VT71$TSM, na.rm = T)
+
+# med punkter
+VT71_TSM <- okokyst_plot(data = VT71, varname = "TSM", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0, 2), binwidth = 2, max_timediff = 25, ylabel = F) +
+                    scale_fill_gradientn("TSM", colours = jet.colors(16)) +
+                     scale_x_datetime(date_breaks = "2 month", date_labels =  "%b %y") +
+  theme(axis.text.x=element_text(angle=60, hjust=1), plot.title = element_text(hjust = 0.5))
+VT71_TSM
+
+ggsave ("Figures/VT71_TSM.png", dpi=500)
+
+
+```
+#### VR54
+```{r}
+
+quantile(df2_m$TSM, na.rm = T)
+
+# med punkter
+VR54_TSM <- okokyst_plot(data = df2_m, varname = "TSM", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0, 3), binwidth = 1) +
+                    scale_fill_gradientn("TSM", colours = jet.colors(16)) +
+                     scale_x_datetime(date_breaks = "2 month", date_labels =  "%b %y") +
+  theme(axis.text.x=element_text(angle=60, hjust=1), plot.title = element_text(hjust = 0.5))
+VR54_TSM
+
+ggsave ("Figurer/VR54_TSM.png", dpi=500)
+
+
+```
+#### VR24
+```{r}
+
+quantile(df3_m$TSM, na.rm = T)
+
+# med punkter
+VR24_TSM <- okokyst_plot(data = df3_m, varname = "TSM", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0, 1.2), binwidth = 0.5) +
+                    scale_fill_gradientn("TSM", colours = jet.colors(16)) +
+                     scale_x_datetime(date_breaks = "2 month", date_labels =  "%b %y") +
+  theme(axis.text.x=element_text(angle=60, hjust=1), plot.title = element_text(hjust = 0.5))
+VR24_TSM
+
+ggsave ("Figurer/VR24_TSM.png", dpi=500)
+
+
+```
+### f. SiO2
+
+#### VT3
+```{r}
+
+quantile(df1_m$SiO2, na.rm = T)
+
+# med punkter
+VT3_Si <- okokyst_plot(data = df1_m, varname = "SiO2", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0, 2), binwidth = 2, max_timediff = 25, ylabel = F) +
+                    scale_fill_gradientn("SiO2", colours = jet.colors(16)) +
+                     scale_x_datetime(date_breaks = "2 month", date_labels =  "%b %y") +
+  theme(axis.text.x=element_text(angle=60, hjust=1), plot.title = element_text(hjust = 0.5))
+VT3_Si
+
+ggsave ("Figurer/VT3_Si.png", dpi=500)
+
+
+```
+#### VR54
+```{r}
+
+quantile(df2_m$SiO2, na.rm = T)
+
+# med punkter
+VR54_Si <- okokyst_plot(data = df2_m, varname = "SiO2", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0, 2), binwidth = 1) +
+                    scale_fill_gradientn("SiO2", colours = jet.colors(16)) +
+                     scale_x_datetime(date_breaks = "2 month", date_labels =  "%b %y") +
+  theme(axis.text.x=element_text(angle=60, hjust=1), plot.title = element_text(hjust = 0.5))
+VR54_Si
+
+ggsave ("Figurer/VR54_Si.png", dpi=500)
+
+
+```
+#### VR24
+```{r}
+
+quantile(df3_m$SiO2, na.rm = T)
+
+# med punkter
+VR24_Si <- okokyst_plot(data = df3_m, varname = "SiO2", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0, 1), binwidth = 50) +
+                    scale_fill_gradientn("SiO2", colours = jet.colors(16)) +
+                     scale_x_datetime(date_breaks = "2 month", date_labels =  "%b %y") +
+  theme(axis.text.x=element_text(angle=60, hjust=1), plot.title = element_text(hjust = 0.5))
+VR24_Si
+
+ggsave ("Figurer/VR24_Si.png", dpi=500)
+
+
+```
+
+### g. NH4
+
+#### VT3
+```{r}
+
+quantile(df1_m$NH4, na.rm = T)
+
+# med punkter
+VT3_NH4 <- okokyst_plot(data = df1_m, varname = "NH4", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0, 67), binwidth = 10, max_timediff = 25, ylabel = F) +
+                    scale_fill_gradientn("NH4", colours = jet.colors(16)) +
+                     scale_x_datetime(date_breaks = "2 month", date_labels =  "%b %y") +
+  theme(axis.text.x=element_text(angle=60, hjust=1), plot.title = element_text(hjust = 0.5))
+VT3_NH4
+
+ggsave ("Figurer/VT3_NH4.png", dpi=500)
+
+
+```
+#### VR54
+```{r}
+
+quantile(df2_m$NH4, na.rm = T)
+
+# med punkter
+VR54_NH4 <- okokyst_plot(data = df2_m, varname = "NH4", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0, 78), binwidth = 10, max_timediff = 25, ylabel = F) +
+                    scale_fill_gradientn("NH4", colours = jet.colors(16)) +
+                     scale_x_datetime(date_breaks = "2 month", date_labels =  "%b %y") +
+  theme(axis.text.x=element_text(angle=60, hjust=1), plot.title = element_text(hjust = 0.5))
+VR54_NH4
+
+ggsave ("Figurer/VR54_NH4.png", dpi=500)
+
+
+```
+#### VR24
+```{r}
+
+quantile(df3_m$NH4, na.rm = T)
+
+# med punkter
+VR24_NH4 <- okokyst_plot(data = df3_m, varname = "NH4", ctd_variable = FALSE,
+                   colored_points = TRUE, limits = c(0, 81), binwidth = 10, max_timediff = 25, ylabel = F) +
+                    scale_fill_gradientn("NH4", colours = jet.colors(16)) +
+                     scale_x_datetime(date_breaks = "2 month", date_labels =  "%b %y") +
+  theme(axis.text.x=element_text(angle=60, hjust=1), plot.title = element_text(hjust = 0.5))
+VR24_NH4
+
+ggsave ("Figurer/VR24_NH4.png", dpi=500)
+
+
+```
+
+### Combine figures (with patchwork library)
+```{r}
+# combine figures 
+VT3 <- VT3_NO3 +  VT3_DOC + VT3_KlfA + VT3_TSM + plot_layout(ncol = 1)
+plot (VT3)
+ggsave("Figurer/VT3_panel_chem.png", plot = VT3)
+
+VR54 <- VR54_NO3 + VR54_DOC + VR54_Chla + VR54_TSM + plot_layout(ncol = 1)
+plot (VR54)
+ggsave("Figurer/VR54_panel_chem.png", plot = VR54)
+
+VR24 <- VR24_NO3 + VR24_Chla + VR24_TSM + plot_layout(ncol = 1)
+plot (VR24)
+ggsave("Figurer/VR24_panel_chem.png", plot = VR24)
+  
+```
+
+
+
+### Making plots of depth profiles
+```{r}
+library(reshape2)
+
+str (df_plot)
+df_sel <- select (df_plot, Date, Depth, Temp, Salt, CT, AT, pH_T, O_Ar)
+  
+  
+df_melt <-
+  df_sel %>%
+  melt(id.vars = c("Depth", "Date"))
+
+profile_2019 <- df_melt %>%
+  filter (Date < as.Date ("2020-01-25")) %>%
+  ggplot(aes(y = Depth, x = value, color = as.factor (Date))) +
+  geom_path() +
+  facet_wrap(~variable
+             , ncol = 2
+             , scales = "free_x") +
+  scale_y_reverse() +
+  labs(x="Value", y="Depth (m)", color="Date") +
+  theme_bw()
+profile_2019
+
+profile_2020 <- df_melt %>%
+  filter (Date >= as.Date ("2020-01-25")) %>%
+  ggplot(aes(y = Depth, x = value, color = as.factor (Date))) +
+  geom_path() +
+  facet_wrap(~variable
+             , ncol = 2
+             , scales = "free_x") +
+  scale_y_reverse() +
+  labs(x="Value", y="Depth (m)", color="Date") +
+  theme_bw()
+profile_2020
+
+ggsave ("Figurer/2020 data/VR54_Profiles_2020.png", dpi=500)
+
+```
+
+
+### Making plots of depth profiles
+```{r}
+library(reshape2)
+
+str (df_plot2)
+# for variables to incl in report
+df_sel <- select (df_plot2, Date, Depth, Temp, Salt,  pH_T, O_Ar)
+  
+df_melt <-
+  df_sel %>%
+  melt(id.vars = c("Depth", "Date"))
+
+# both 2019 and 2020
+profile_1 <- df_melt %>%
+  ggplot(aes(y = Depth, x = value, color = as.factor (Date))) +
+  geom_path() +
+  facet_wrap(~variable
+             , ncol = 2
+             , scales = "free_x") +
+  scale_y_reverse() +
+  labs(x="Value", y="Depth (m)", color="Date") +
+  theme_bw()
+profile_1
+
+str
+
+profile_2020_rapp <- df_melt %>%
+  filter (Date >= as.Date ("2020-01-25")& Variable == "Temp") %>%
+  ggplot(aes(y = Depth, x = value, color = as.factor (Date))) +
+  geom_path() +
+  geom_point () +
+  facet_wrap(~variable
+             , ncol = 2
+             , scales = "free_x") +
+  scale_y_reverse() +
+  labs(x="Value", y="Depth (m)", color="Date") +
+  theme_bw()
+profile_2020
+
+
+# CT AT for appendix
+df_sel_1 <- select (df_plot2, Date, Depth, CT, AT)
+  
+df_melt_1 <-
+  df_sel_1 %>%
+  melt(id.vars = c("Depth", "Date"))
+
+profile_2020_1 <- df_melt_1 %>%
+  filter (Date >= as.Date ("2020-01-25")) %>%
+  ggplot(aes(y = Depth, x = value, color = as.factor (Date))) +
+  geom_path() +
+  geom_point () +
+  facet_wrap(~variable
+             , ncol = 2
+             , scales = "free_x") +
+  scale_y_reverse() +
+  labs(x="Value", y="Depth (m)", color="Date") +
+  theme_bw()
+profile_2020_1
+
+ggsave ("Figurer/2020 data/SVR1_Profiles_CT_AT.png", dpi=500)
+
+
+# nutrients for appendix
+df_sel_2 <- select (df_plot2, Date, Depth, NO3_NO2, PO4, SiO2)
+  
+df_melt_2 <-
+  df_sel_2 %>%
+  melt(id.vars = c("Depth", "Date"))
+
+profile_2020_2 <- df_melt_2 %>%
+  filter (Date >= as.Date ("2020-01-25")) %>%
+  ggplot(aes(y = Depth, x = value, color = as.factor (Date))) +
+  geom_path() +
+  geom_point () +
+  facet_wrap(~variable
+             , ncol = 3
+             , scales = "free_x") +
+  scale_y_reverse() +
+  labs(x="Value", y="Depth (m)", color="Date") +
+  theme_bw()
+profile_2020_2
+
+ggsave ("Figurer/2020 data/SVR1_Profiles_nutrients.png", dpi=500)
+
+`
